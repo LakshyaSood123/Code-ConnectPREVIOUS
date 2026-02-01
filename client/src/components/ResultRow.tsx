@@ -254,21 +254,31 @@ export function ResultRow({ result, onApprove, onReject, onManualReview }: Resul
                 )}
 
                 {result.toolType === 'fact-check' && result.factCheck && (
-                  <div>
+                  <div className="space-y-4">
                     <h5 className="text-sm font-semibold text-[var(--text)] mb-3 flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-[var(--ok)]" />
-                      Fact Check Result
+                      <CheckCircle2 className={cn(
+                        "w-4 h-4",
+                        result.factCheck.verdict === 'verified' ? "text-[var(--ok)]" :
+                        result.factCheck.verdict === 'needs_review' ? "text-[var(--grad-orange-start)]" : "text-[var(--muted)]"
+                      )} />
+                      {result.factCheck.displayTitle || "Fact Check Result"}
                     </h5>
                     <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-bold px-2 py-1 rounded bg-[var(--ok)]/15 text-[var(--ok)] uppercase tracking-wide">
-                          {result.factCheck.verdict === 'verified' ? 'VERIFIED FACT' : result.factCheck.verdict}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={cn(
+                          "text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide",
+                          result.factCheck.verdict === 'verified' ? "bg-[var(--ok)]/15 text-[var(--ok)]" :
+                          result.factCheck.verdict === 'needs_review' ? "bg-[var(--grad-orange-start)]/15 text-[var(--grad-orange-start)]" :
+                          "bg-[var(--muted)]/15 text-[var(--muted)]"
+                        )}>
+                          {result.factCheck.verdict === 'verified' ? 'VERIFIED FACT' : 
+                           result.factCheck.verdict === 'needs_review' ? 'NEEDS REVIEW' : result.factCheck.verdict}
                         </span>
                         <span className="text-xs text-[var(--muted)]">
                           Confidence: {(result.factCheck.confidence * 100).toFixed(0)}%
                         </span>
                       </div>
-                      {result.factCheck.title && (
+                      {result.factCheck.title && !result.factCheck.displayTitle && (
                         <p className="text-sm font-medium text-[var(--text)]">
                           {result.factCheck.title}
                         </p>
@@ -279,14 +289,85 @@ export function ResultRow({ result, onApprove, onReject, onManualReview }: Resul
                         </p>
                       )}
                     </div>
-                    <ul className="mt-4 space-y-2">
-                      {result.evidence.map((item, idx) => (
-                        <li key={idx} className="flex items-start gap-2 text-xs text-[var(--muted)]">
-                          <span className="mt-1.5 w-1 h-1 rounded-full bg-[var(--muted)]/30 shrink-0" />
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
+
+                    {/* Extended fact check: Extracted Entities */}
+                    {result.factCheck.extractedEntities && result.factCheck.extractedEntities.length > 0 && (
+                      <div>
+                        <h6 className="text-xs font-semibold text-[var(--text)] mb-2 uppercase tracking-wide">Extracted Entities</h6>
+                        <div className="flex flex-wrap gap-1.5">
+                          {result.factCheck.extractedEntities.map((entity, idx) => (
+                            <span key={idx} className="text-[10px] px-2 py-1 rounded bg-[var(--panel2)] text-[var(--muted)] border border-[var(--border)]">
+                              {entity}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Extended fact check: Key Claims */}
+                    {result.factCheck.keyClaims && result.factCheck.keyClaims.length > 0 && (
+                      <div>
+                        <h6 className="text-xs font-semibold text-[var(--text)] mb-2 uppercase tracking-wide">Key Claims</h6>
+                        <ul className="space-y-2">
+                          {result.factCheck.keyClaims.map((claim, idx) => (
+                            <li key={idx} className="flex items-start gap-2 text-xs text-[var(--muted)]">
+                              <span className="mt-0.5 text-[var(--accent)] font-bold shrink-0">{idx + 1}.</span>
+                              {claim}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Extended fact check: Evidence Cards */}
+                    {result.factCheck.evidenceCards && result.factCheck.evidenceCards.length > 0 && (
+                      <div>
+                        <h6 className="text-xs font-semibold text-[var(--text)] mb-2 uppercase tracking-wide">Evidence</h6>
+                        <ul className="space-y-1.5">
+                          {result.factCheck.evidenceCards.map((card, idx) => (
+                            <li key={idx} className="flex items-start gap-2 text-xs text-[var(--muted)]">
+                              <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[var(--accent)]/50 shrink-0" />
+                              {card}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Extended fact check: Why Manual Review */}
+                    {result.factCheck.whyManualReview && result.factCheck.whyManualReview.length > 0 && (
+                      <div className="p-3 rounded bg-[var(--grad-orange-start)]/10 border border-[var(--grad-orange-start)]/20">
+                        <h6 className="text-xs font-semibold text-[var(--grad-orange-start)] mb-2 uppercase tracking-wide">Why Manual Review</h6>
+                        <ul className="space-y-1">
+                          {result.factCheck.whyManualReview.map((reason, idx) => (
+                            <li key={idx} className="flex items-start gap-2 text-xs text-[var(--muted)]">
+                              <span className="mt-1.5 w-1 h-1 rounded-full bg-[var(--grad-orange-start)]/50 shrink-0" />
+                              {reason}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Verdict status */}
+                    {result.factCheck.verdictStatus && (
+                      <div className="flex items-center gap-2 pt-2 border-t border-[var(--border)]">
+                        <span className="text-xs font-medium text-[var(--text)]">Verdict:</span>
+                        <span className="text-xs text-[var(--muted)]">{result.factCheck.verdictStatus}</span>
+                      </div>
+                    )}
+
+                    {/* Simple evidence list (for simple fact checks like Sensex) */}
+                    {!result.factCheck.keyClaims && result.evidence.length > 0 && (
+                      <ul className="mt-2 space-y-2">
+                        {result.evidence.map((item, idx) => (
+                          <li key={idx} className="flex items-start gap-2 text-xs text-[var(--muted)]">
+                            <span className="mt-1.5 w-1 h-1 rounded-full bg-[var(--muted)]/30 shrink-0" />
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
                 )}
 

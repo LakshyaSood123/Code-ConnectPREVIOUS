@@ -81,6 +81,90 @@ function generateMockResult(req: AnalysisRequest): AnalysisResult {
     };
   }
 
+  // Doom 64 / Aubrey Hodges fact check demo (MEDIUM / MANUAL_REVIEW)
+  const isDoom64Demo = req.toolType === 'fact-check' && (
+    filenameLower.includes("doom64") ||
+    filenameLower.includes("aubrey") ||
+    filenameLower.includes("hodges") ||
+    filenameLower.includes("ongaku") ||
+    filenameLower.includes("fact_42001")
+  );
+
+  if (isDoom64Demo) {
+    riskScore = 58; // Fixed MEDIUM
+    priority = "MEDIUM";
+    decision = "MANUAL_REVIEW";
+    
+    const extractedEntities = [
+      "Aubrey Hodges (game composer)",
+      "Doom 64 (Nintendo 64 shooter)",
+      "Nintendo 64",
+      "Midway",
+      "id Software",
+      "Nightdive Studios",
+      "The Ongaku (republisher / source label)"
+    ];
+
+    const keyClaims = [
+      "Aubrey Hodges created a classic dark ambient score for the Nintendo 64 shooter Doom 64, revisiting it ~20 years later for an augmented album release.",
+      "Doom 64 is not the 64th game in the Doom series.",
+      "Doom 64 was developed by Midway with oversight from id Software.",
+      "The game recently got a fresh port for PC and consoles by Nightdive Studios."
+    ];
+
+    const evidenceCards = [
+      "Publisher/credits snippet present in screenshot (The Ongaku republish line).",
+      "Known franchise info usually requires a reliable external source (developer/publisher credits).",
+      "Port claim requires verification against release notes / store listing."
+    ];
+
+    const whyManualReview = [
+      "Multiple factual claims; some require external confirmation (credits, release timing, port details).",
+      "Screenshot is partial; not enough context to confirm all claims.",
+      "Marking as MEDIUM risk to route to analyst review (demo)."
+    ];
+
+    evidence = [
+      ...keyClaims.slice(0, 2),
+      "Extracted from uploaded screenshot (demo)"
+    ];
+
+    factCheck = {
+      verdict: "needs_review",
+      confidence: 0.62,
+      referenceId: "doom64_ongaku_42001",
+      trigger: "filename:42001",
+      title: "Doom 64 / Aubrey Hodges",
+      publisher: "The Ongaku",
+      caseId: "FACT_DOOM64_42001",
+      displayTitle: "Article claim review: Doom 64 / Aubrey Hodges",
+      extractedEntities,
+      keyClaims,
+      evidenceCards,
+      whyManualReview,
+      verdictStatus: "Likely credible but needs manual verification",
+      recommendedAction: "Manual Review"
+    };
+
+    return {
+      id: Math.floor(Math.random() * 100000),
+      filename: req.filename || `fact_check_${Date.now()}.txt`,
+      toolType: req.toolType,
+      riskScore,
+      priority,
+      decision,
+      evidence,
+      actionRequired: "Analyst verification needed",
+      timestamp: new Date(),
+      previewUrl,
+      metadata: null,
+      geolocation: null,
+      factCheck,
+      propaganda: null,
+      verification: null,
+    };
+  }
+
   // Propaganda demo trigger (quiet hour / gossamer ledger)
   const isPropagandaDemo = req.toolType === 'propaganda' && (
     filenameLower.includes("25001") ||

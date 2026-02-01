@@ -30,6 +30,15 @@ export const analysisResults = pgTable("analysis_results", {
     trigger: string;
     title?: string;
     publisher?: string;
+    // Extended fields for detailed fact check
+    caseId?: string;
+    displayTitle?: string;
+    extractedEntities?: string[];
+    keyClaims?: string[];
+    evidenceCards?: string[];
+    whyManualReview?: string[];
+    verdictStatus?: string;
+    recommendedAction?: string;
   }>(),
   propaganda: jsonb("propaganda").$type<{
     trigger: string;
