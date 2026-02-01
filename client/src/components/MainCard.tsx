@@ -4,7 +4,7 @@ import { ToolType } from '@shared/schema';
 
 interface MainCardProps {
   activeTool: ToolType;
-  onAnalyze: (data: { filename?: string; content?: string }) => void;
+  onAnalyze: (data: { filename?: string; content?: string; file?: File }) => void;
   isAnalyzing: boolean;
 }
 
@@ -14,7 +14,8 @@ export function MainCard({ activeTool, onAnalyze, isAnalyzing }: MainCardProps) 
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      onAnalyze({ filename: e.target.files[0].name });
+      const file = e.target.files[0];
+      onAnalyze({ filename: file.name, file });
       // Reset input so same file can be selected again
       e.target.value = '';
     }

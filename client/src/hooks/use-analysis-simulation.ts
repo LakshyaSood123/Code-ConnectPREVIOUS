@@ -6,6 +6,7 @@ type AnalysisRequest = {
   filename?: string;
   content?: string;
   toolType: ToolType;
+  file?: File;
 };
 
 // Initial KPI stats
@@ -21,6 +22,10 @@ function generateMockResult(req: AnalysisRequest): AnalysisResult {
   const isFake = (req.filename || req.content || "").toLowerCase().includes("_fake");
   const isReal = (req.filename || req.content || "").toLowerCase().includes("_real");
   
+  let previewUrl: string | null = null;
+  if (req.file && req.file.type.startsWith('image/')) {
+    previewUrl = URL.createObjectURL(req.file);
+  }
   // Default to uncertain/manual review unless specified
   let riskScore = Math.floor(Math.random() * 20) + 40; // 40-60
   let priority = "MEDIUM";
@@ -97,6 +102,7 @@ function generateMockResult(req: AnalysisRequest): AnalysisResult {
     evidence,
     actionRequired: decision === "MANUAL_REVIEW" ? "Analyst verification needed" : null,
     timestamp: new Date(),
+    previewUrl,
   };
 }
 
@@ -105,6 +111,15 @@ export function useAnalysisSimulation() {
   const [results, setResults] = useState<AnalysisResult[]>([]);
   const [stats, setStats] = useState<KpiStats>(INITIAL_STATS);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Revoke object URLs on unmount to prevent leaks
+  React.useEffect(() => {
+    return () => {
+      results.forEach(r => {
+        if (r.previewUrl) URL.revokeObjectURL(r.previewUrl);
+      });
+    };
+  }, [results]);
 
   const runAnalysis = useCallback(async (req: AnalysisRequest) => {
     setIsAnalyzing(true);

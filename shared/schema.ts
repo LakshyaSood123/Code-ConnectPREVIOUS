@@ -14,6 +14,7 @@ export const analysisResults = pgTable("analysis_results", {
   evidence: jsonb("evidence").$type<string[]>().notNull(),
   actionRequired: text("action_required"),
   timestamp: timestamp("timestamp").defaultNow(),
+  previewUrl: text("preview_url"),
 });
 
 export const insertAnalysisResultSchema = createInsertSchema(analysisResults);

@@ -24,6 +24,15 @@ export function ResultRow({ result, onApprove, onReject }: ResultRowProps) {
   const [expanded, setExpanded] = React.useState(false);
 
   const getIcon = () => {
+    if (result.previewUrl) {
+      return (
+        <img 
+          src={result.previewUrl} 
+          alt="File preview" 
+          className="w-14 h-14 object-cover rounded-md"
+        />
+      );
+    }
     switch (result.toolType) {
       case 'document': return <File className="w-5 h-5 text-[var(--accent)]" />;
       case 'fact-check': return <Search className="w-5 h-5 text-[var(--accent-3)]" />;
@@ -44,21 +53,33 @@ export function ResultRow({ result, onApprove, onReject }: ResultRowProps) {
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="card-muted mb-3 overflow-hidden"
+      className="bg-[var(--panel)] border border-[var(--border)] rounded-[var(--radius)] shadow-[var(--shadow)] mb-3 overflow-hidden"
     >
       {/* Header Row */}
       <div 
-        className="p-4 flex flex-col md:flex-row items-center gap-4 cursor-pointer hover:bg-white/5 transition-colors"
+        className="p-3 flex flex-col md:flex-row items-center gap-4 cursor-pointer hover:bg-white/5 transition-colors"
         onClick={() => setExpanded(!expanded)}
       >
         <div className="flex items-center gap-4 flex-1 w-full">
-          <div className="p-2 bg-[var(--panel)] rounded-lg border border-[var(--border)]">
+          <div className="shrink-0 flex items-center justify-center p-0.5 bg-[var(--panel2)] rounded-lg border border-[var(--border)]">
             {getIcon()}
           </div>
           
           <div className="flex-1 min-w-0">
-            <h4 className="font-medium text-[var(--text)] truncate">{result.filename}</h4>
-            <div className="flex items-center gap-2 mt-1">
+            <div className="flex items-center gap-2 mb-1">
+              <span className={cn(
+                "px-2 py-0.5 rounded text-[10px] font-bold uppercase",
+                result.priority === "CRITICAL" ? "bg-[var(--danger)]/20 text-[var(--danger)]" :
+                result.priority === "MEDIUM" ? "bg-[var(--grad-orange-start)]/20 text-[var(--grad-orange-start)]" :
+                "bg-[var(--ok)]/20 text-[var(--ok)]"
+              )}>
+                {result.priority}
+              </span>
+              <span className="text-xs text-[var(--muted)] truncate max-w-[200px]">
+                {result.filename}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
               <span className="text-xs text-[var(--muted)] uppercase tracking-wider font-semibold">
                 {result.toolType}
               </span>
@@ -104,11 +125,11 @@ export function ResultRow({ result, onApprove, onReject }: ResultRowProps) {
             exit={{ height: 0, opacity: 0 }}
             className="border-t border-[var(--border)] bg-[var(--panel2)]/30"
           >
-            <div className="p-4 md:p-6 grid md:grid-cols-2 gap-6">
+            <div className="p-4 grid md:grid-cols-2 gap-6">
               <div>
                 <h5 className="text-sm font-semibold text-[var(--text)] mb-3 flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 text-[var(--accent)]" />
-                  Key Evidence
+                  Evidence Found
                 </h5>
                 <ul className="space-y-2">
                   {result.evidence.map((item, idx) => (
@@ -122,28 +143,23 @@ export function ResultRow({ result, onApprove, onReject }: ResultRowProps) {
 
               <div className="flex flex-col justify-between">
                 <div>
-                   <h5 className="text-sm font-semibold text-[var(--text)] mb-3">Analysis Priority</h5>
-                   <span className={cn(
-                     "inline-block px-3 py-1 rounded text-xs font-bold mb-4",
-                     result.priority === "CRITICAL" ? "bg-[var(--danger)]/20 text-[var(--danger)]" :
-                     result.priority === "MEDIUM" ? "bg-[var(--grad-orange-start)]/20 text-[var(--grad-orange-start)]" :
-                     "bg-[var(--ok)]/20 text-[var(--ok)]"
-                   )}>
-                     {result.priority} PRIORITY
-                   </span>
+                   <h5 className="text-sm font-semibold text-[var(--text)] mb-2">Action Required</h5>
+                   <p className="text-sm text-[var(--muted)] mb-4 italic">
+                     {result.decision === "MANUAL_REVIEW" ? "Analyst verification needed" : "No immediate action required"}
+                   </p>
                 </div>
 
-                <div className="flex gap-3 mt-4">
+                <div className="flex gap-3">
                   <button 
                     onClick={(e) => { e.stopPropagation(); onApprove(result.id); }}
-                    className="flex-1 btn btn-secondary border-[var(--ok)]/30 hover:bg-[var(--ok)]/10 hover:text-[var(--ok)]"
+                    className="flex-1 btn btn-secondary h-9 border-[var(--ok)]/30 hover:bg-[var(--ok)]/10 hover:text-[var(--ok)]"
                   >
                     <Check className="w-4 h-4" />
                     Approve
                   </button>
                   <button 
                     onClick={(e) => { e.stopPropagation(); onReject(result.id); }}
-                    className="flex-1 btn btn-secondary border-[var(--danger)]/30 hover:bg-[var(--danger)]/10 hover:text-[var(--danger)]"
+                    className="flex-1 btn btn-secondary h-9 border-[var(--danger)]/30 hover:bg-[var(--danger)]/10 hover:text-[var(--danger)]"
                   >
                     <X className="w-4 h-4" />
                     Reject
