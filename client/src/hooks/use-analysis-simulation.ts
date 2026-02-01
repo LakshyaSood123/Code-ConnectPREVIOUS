@@ -42,6 +42,13 @@ function generateMockResult(req: AnalysisRequest): AnalysisResult {
         "Language matches known disinformation patterns",
         "Source domain has low trust score"
       ];
+    } else if (req.toolType === 'propaganda') {
+      riskScore = 85;
+      evidence = [
+        "Identified emotional manipulation techniques",
+        "Presence of binary (us-vs-them) framing",
+        "Loaded language detected in multiple segments"
+      ];
     }
   } else if (isReal) {
     riskScore = Math.floor(Math.random() * 10) + 2; // 2-12
@@ -58,6 +65,25 @@ function generateMockResult(req: AnalysisRequest): AnalysisResult {
         "Text consistent with established timeline",
         "No known bias detected"
       ];
+    } else if (req.toolType === 'propaganda') {
+      riskScore = 15;
+      evidence = [
+        "Objective and neutral tone throughout",
+        "Consistent use of factual evidence",
+        "Balanced representation of multiple perspectives"
+      ];
+    }
+  } else {
+    // Normal medium case
+    if (req.toolType === 'propaganda') {
+      riskScore = 55;
+      evidence = [
+        "Moderate use of persuasive techniques",
+        "Partial bias detected in selective reporting",
+        "Some emotional language found"
+      ];
+    } else if (req.toolType === 'fact-check') {
+      riskScore = 62;
     }
   }
 
