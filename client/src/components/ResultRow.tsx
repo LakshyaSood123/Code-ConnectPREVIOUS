@@ -29,13 +29,15 @@ export function ResultRow({ result, onApprove, onReject, onManualReview }: Resul
   const riskLevel = result.riskScore >= 70 ? 'CRITICAL' : result.riskScore >= 40 ? 'MEDIUM' : 'LOW';
   const isMediumRisk = riskLevel === 'MEDIUM';
 
+  const hasPreview = !!result.previewUrl;
+
   const getIcon = () => {
     if (result.previewUrl) {
       return (
         <img 
           src={result.previewUrl} 
           alt="File preview" 
-          className="w-14 h-14 object-cover rounded-md"
+          className="w-24 h-24 object-cover rounded-[var(--radius)] border border-[var(--border)] shadow-[var(--shadow)]"
         />
       );
     }
@@ -66,8 +68,11 @@ export function ResultRow({ result, onApprove, onReject, onManualReview }: Resul
         className="p-4 flex flex-col md:flex-row items-center gap-4 cursor-pointer hover:bg-[var(--panel2)]/20 transition-colors"
         onClick={() => setExpanded(!expanded)}
       >
-        <div className="flex items-center gap-4 flex-1 w-full">
-          <div className="shrink-0 flex items-center justify-center p-0.5 bg-[var(--panel2)] rounded-lg border border-[var(--border)]">
+        <div className={cn("flex items-center flex-1 w-full", hasPreview ? "gap-4" : "gap-3")}>
+          <div className={cn(
+            "shrink-0 flex items-center justify-center",
+            !hasPreview && "p-2.5 bg-[var(--panel2)] rounded-lg border border-[var(--border)]"
+          )}>
             {getIcon()}
           </div>
           
