@@ -6,14 +6,6 @@ interface KpiTilesProps {
   stats: KpiStats;
 }
 
-import React from 'react';
-import type { KpiStats } from '@shared/schema';
-import { Activity, AlertTriangle, CheckCircle, FileText } from 'lucide-react';
-
-interface KpiTilesProps {
-  stats: KpiStats;
-}
-
 export function KpiTiles({ stats }: KpiTilesProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
