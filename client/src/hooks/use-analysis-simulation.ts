@@ -26,69 +26,129 @@ function generateMockResult(req: AnalysisRequest): AnalysisResult {
   if (req.file && req.file.type.startsWith('image/')) {
     previewUrl = URL.createObjectURL(req.file);
   }
+
   // Default to uncertain/manual review unless specified
   let riskScore = Math.floor(Math.random() * 20) + 40; // 40-60
   let priority = "MEDIUM";
   let decision = "MANUAL_REVIEW";
-  let evidence: string[] = ["Inconclusive metadata patterns", "Standard encoding detected"];
+  let evidence: string[] = ["Inconclusive patterns", "Standard encoding detected"];
+  let metadata: any = null;
+  let geolocation: any = null;
 
-  if (isFake) {
-    riskScore = Math.floor(Math.random() * 10) + 88; // 88-98
-    priority = "CRITICAL";
-    decision = "REJECT";
-    evidence = [
-      "High probability of digital manipulation",
-      "Inconsistent error level analysis (ELA)",
-      "Metadata anomalies detected in header"
-    ];
-    if (req.toolType === 'fact-check') {
-      evidence = [
-        "Contradicts verified sources (Reuters, AP)",
-        "Language matches known disinformation patterns",
-        "Source domain has low trust score"
+  if (req.toolType === 'verification') {
+    // Section A: Metadata Analysis
+    let metaDecision = "MANUAL_REVIEW";
+    let metaEvidence = ["Analysis required"];
+    
+    if (isFake) {
+      metaDecision = "REJECT";
+      metaEvidence = [
+        "Edited software footprint (Adobe Photoshop)",
+        "EXIF timestamp mismatch",
+        "Anomalous header structures"
       ];
-    } else if (req.toolType === 'propaganda') {
-      riskScore = 85;
-      evidence = [
-        "Identified emotional manipulation techniques",
-        "Presence of binary (us-vs-them) framing",
-        "Loaded language detected in multiple segments"
+    } else if (isReal) {
+      metaDecision = "APPROVE";
+      metaEvidence = [
+        "Clean metadata profile",
+        "Consistent device fingerprints",
+        "No software traces found"
       ];
+    } else {
+      metaEvidence = ["Standard metadata patterns", "Partial review suggested"];
     }
-  } else if (isReal) {
-    riskScore = Math.floor(Math.random() * 10) + 2; // 2-12
-    priority = "LOW";
-    decision = "APPROVE";
-    evidence = [
-      "Verified digital signature present",
-      "Consistent sensor pattern noise",
-      "No manipulation traces found"
-    ];
-    if (req.toolType === 'fact-check') {
-      evidence = [
-        "Corroborated by multiple credible sources",
-        "Text consistent with established timeline",
-        "No known bias detected"
-      ];
-    } else if (req.toolType === 'propaganda') {
-      riskScore = 15;
-      evidence = [
-        "Objective and neutral tone throughout",
-        "Consistent use of factual evidence",
-        "Balanced representation of multiple perspectives"
-      ];
+    metadata = { decision: metaDecision, evidence: metaEvidence };
+
+    // Section B: Geolocation Verification
+    let geoDecision = "MANUAL_REVIEW";
+    let geoEvidence = ["Needs review"];
+    
+    if (isFake) {
+      geoDecision = "REJECT";
+      geoEvidence = ["No reliable match found", "Visual cues contradict landmarks"];
+    } else if (isReal) {
+      geoDecision = "APPROVE";
+      geoEvidence = ["High-confidence location verification", "Matched visual landmarks"];
+    } else {
+      geoEvidence = ["Moderate confidence match", "Ambiguous visual cues"];
     }
+    geolocation = { decision: geoDecision, evidence: geoEvidence };
+
+    // Result Summary Logic
+    if (metaDecision === "REJECT" || geoDecision === "REJECT") {
+      riskScore = Math.floor(Math.random() * 5) + 90; // 90-95
+      priority = "CRITICAL";
+      decision = "REJECT";
+    } else if (metaDecision === "APPROVE" && geoDecision === "APPROVE") {
+      riskScore = Math.floor(Math.random() * 5) + 10; // 10-15
+      priority = "LOW";
+      decision = "APPROVE";
+    } else {
+      riskScore = Math.floor(Math.random() * 15) + 50; // 50-65
+      priority = "MEDIUM";
+      decision = "MANUAL_REVIEW";
+    }
+    evidence = ["Combined verification complete. See sections for details."];
+
   } else {
-    // Normal medium case
-    if (req.toolType === 'propaganda') {
-      riskScore = 55;
+    // Existing logic for other tools
+    if (isFake) {
+      riskScore = Math.floor(Math.random() * 10) + 88; // 88-98
+      priority = "CRITICAL";
+      decision = "REJECT";
       evidence = [
-        "Moderate use of persuasive techniques",
-        "Partial bias detected in selective reporting",
-        "Some emotional language found"
+        "High probability of digital manipulation",
+        "Inconsistent error level analysis (ELA)",
+        "Metadata anomalies detected in header"
       ];
-    } else if (req.toolType === 'fact-check') {
-      riskScore = 62;
+      if (req.toolType === 'fact-check') {
+        evidence = [
+          "Contradicts verified sources (Reuters, AP)",
+          "Language matches known disinformation patterns",
+          "Source domain has low trust score"
+        ];
+      } else if (req.toolType === 'propaganda') {
+        riskScore = 85;
+        evidence = [
+          "Identified emotional manipulation techniques",
+          "Presence of binary (us-vs-them) framing",
+          "Loaded language detected in multiple segments"
+        ];
+      }
+    } else if (isReal) {
+      riskScore = Math.floor(Math.random() * 10) + 2; // 2-12
+      priority = "LOW";
+      decision = "APPROVE";
+      evidence = [
+        "Verified digital signature present",
+        "Consistent sensor pattern noise",
+        "No manipulation traces found"
+      ];
+      if (req.toolType === 'fact-check') {
+        evidence = [
+          "Corroborated by multiple credible sources",
+          "Text consistent with established timeline",
+          "No known bias detected"
+        ];
+      } else if (req.toolType === 'propaganda') {
+        riskScore = 15;
+        evidence = [
+          "Objective and neutral tone throughout",
+          "Consistent use of factual evidence",
+          "Balanced representation of multiple perspectives"
+        ];
+      }
+    } else {
+      if (req.toolType === 'propaganda') {
+        riskScore = 55;
+        evidence = [
+          "Moderate use of persuasive techniques",
+          "Partial bias detected in selective reporting",
+          "Some emotional language found"
+        ];
+      } else if (req.toolType === 'fact-check') {
+        riskScore = 62;
+      }
     }
   }
 
@@ -103,6 +163,8 @@ function generateMockResult(req: AnalysisRequest): AnalysisResult {
     actionRequired: decision === "MANUAL_REVIEW" ? "Analyst verification needed" : null,
     timestamp: new Date(),
     previewUrl,
+    metadata,
+    geolocation,
   };
 }
 

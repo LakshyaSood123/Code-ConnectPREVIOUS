@@ -7,7 +7,7 @@ import { z } from "zod";
 export const analysisResults = pgTable("analysis_results", {
   id: serial("id").primaryKey(),
   filename: text("filename").notNull(),
-  toolType: text("tool_type").notNull(), // 'document', 'fact-check', 'propaganda', 'metadata', 'geo'
+  toolType: text("tool_type").notNull(), // 'document', 'fact-check', 'propaganda', 'verification'
   riskScore: integer("risk_score").notNull(),
   priority: text("priority").notNull(), // 'LOW', 'MEDIUM', 'CRITICAL'
   decision: text("decision").notNull(), // 'APPROVE', 'REJECT', 'MANUAL_REVIEW'
@@ -15,6 +15,14 @@ export const analysisResults = pgTable("analysis_results", {
   actionRequired: text("action_required"),
   timestamp: timestamp("timestamp").defaultNow(),
   previewUrl: text("preview_url"),
+  metadata: jsonb("metadata").$type<{
+    decision: string;
+    evidence: string[];
+  }>(),
+  geolocation: jsonb("geolocation").$type<{
+    decision: string;
+    evidence: string[];
+  }>(),
 });
 
 export const insertAnalysisResultSchema = createInsertSchema(analysisResults);
@@ -22,7 +30,7 @@ export const insertAnalysisResultSchema = createInsertSchema(analysisResults);
 export type AnalysisResult = typeof analysisResults.$inferSelect;
 export type InsertAnalysisResult = z.infer<typeof insertAnalysisResultSchema>;
 
-export type ToolType = 'document' | 'fact-check' | 'propaganda' | 'metadata' | 'geo';
+export type ToolType = 'document' | 'fact-check' | 'propaganda' | 'verification';
 
 export type KpiStats = {
   total: number;

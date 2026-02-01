@@ -37,8 +37,7 @@ export function ResultRow({ result, onApprove, onReject }: ResultRowProps) {
       case 'document': return <File className="w-5 h-5 text-[var(--accent)]" />;
       case 'fact-check': return <Search className="w-5 h-5 text-[var(--accent-3)]" />;
       case 'propaganda': return <ShieldAlert className="w-5 h-5 text-[var(--danger)]" />;
-      case 'geo': return <MapPin className="w-5 h-5 text-[var(--ok)]" />;
-      case 'metadata': return <Globe className="w-5 h-5 text-[var(--grad-orange-start)]" />;
+      case 'verification': return <Globe className="w-5 h-5 text-[var(--grad-orange-start)]" />;
       default: return <File className="w-5 h-5" />;
     }
   };
@@ -127,19 +126,77 @@ export function ResultRow({ result, onApprove, onReject }: ResultRowProps) {
             className="border-t border-[var(--border)] bg-[var(--panel2)]/30"
           >
             <div className="p-4 grid md:grid-cols-2 gap-6">
-              <div>
-                <h5 className="text-sm font-semibold text-[var(--text)] mb-3 flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-[var(--accent)]" />
-                  Evidence Found
-                </h5>
-                <ul className="space-y-2">
-                  {result.evidence.map((item, idx) => (
-                    <li key={idx} className="flex items-start gap-2 text-sm text-[var(--muted)]">
-                      <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[var(--muted)]/30 shrink-0" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
+              <div className="space-y-6">
+                {result.toolType === 'verification' && result.metadata && (
+                  <div>
+                    <h5 className="text-sm font-semibold text-[var(--text)] mb-3 flex items-center gap-2">
+                      <Globe className="w-4 h-4 text-[var(--accent)]" />
+                      Section A: Metadata Analysis
+                    </h5>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className={cn(
+                        "text-[10px] font-bold px-1.5 py-0.5 rounded",
+                        result.metadata.decision === "APPROVE" ? "bg-[var(--ok)]/10 text-[var(--ok)]" :
+                        result.metadata.decision === "REJECT" ? "bg-[var(--danger)]/10 text-[var(--danger)]" :
+                        "bg-[var(--grad-orange-start)]/10 text-[var(--grad-orange-start)]"
+                      )}>
+                        {result.metadata.decision}
+                      </span>
+                    </div>
+                    <ul className="space-y-1">
+                      {result.metadata.evidence.map((item, idx) => (
+                        <li key={idx} className="flex items-start gap-2 text-xs text-[var(--muted)]">
+                          <span className="mt-1.5 w-1 h-1 rounded-full bg-[var(--muted)]/30 shrink-0" />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {result.toolType === 'verification' && result.geolocation && (
+                  <div>
+                    <h5 className="text-sm font-semibold text-[var(--text)] mb-3 flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-[var(--accent)]" />
+                      Section B: Geolocation Verification
+                    </h5>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className={cn(
+                        "text-[10px] font-bold px-1.5 py-0.5 rounded",
+                        result.geolocation.decision === "APPROVE" ? "bg-[var(--ok)]/10 text-[var(--ok)]" :
+                        result.geolocation.decision === "REJECT" ? "bg-[var(--danger)]/10 text-[var(--danger)]" :
+                        "bg-[var(--grad-orange-start)]/10 text-[var(--grad-orange-start)]"
+                      )}>
+                        {result.geolocation.decision}
+                      </span>
+                    </div>
+                    <ul className="space-y-1">
+                      {result.geolocation.evidence.map((item, idx) => (
+                        <li key={idx} className="flex items-start gap-2 text-xs text-[var(--muted)]">
+                          <span className="mt-1.5 w-1 h-1 rounded-full bg-[var(--muted)]/30 shrink-0" />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {!result.metadata && (
+                  <div>
+                    <h5 className="text-sm font-semibold text-[var(--text)] mb-3 flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-[var(--accent)]" />
+                      Evidence Found
+                    </h5>
+                    <ul className="space-y-2">
+                      {result.evidence.map((item, idx) => (
+                        <li key={idx} className="flex items-start gap-2 text-sm text-[var(--muted)]">
+                          <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[var(--muted)]/30 shrink-0" />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
 
               <div className="flex flex-col justify-between">

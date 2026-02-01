@@ -48,8 +48,7 @@ export function MainCard({ activeTool, onAnalyze, isAnalyzing }: MainCardProps) 
         </h3>
         <p className="text-[var(--muted)] text-sm max-w-md mx-auto leading-relaxed">
           Support for PDF, DOCX, JPG, PNG. Maximum file size 50MB.
-          {activeTool === 'metadata' && " Extracts EXIF, XMP, and IPTC data."}
-          {activeTool === 'geo' && " Analyzes visual landmarks for geolocation."}
+          {activeTool === 'verification' && " Analyzes metadata and geolocation landmarks."}
           {activeTool === 'fact-check' && " Upload an article/document to verify claims."}
           {activeTool === 'propaganda' && " Upload content to assess propaganda likelihood."}
         </p>
@@ -68,8 +67,7 @@ export function MainCard({ activeTool, onAnalyze, isAnalyzing }: MainCardProps) 
       case 'document': return { title: "Document Forensics", icon: FileText, desc: "Analyze documents for digital alteration and manipulation." };
       case 'fact-check': return { title: "Automated Fact Check", icon: Search, desc: "Verify claims against a database of trusted sources." };
       case 'propaganda': return { title: "Propaganda Detection", icon: AlertOctagon, desc: "Identify persuasive techniques and bias in text." };
-      case 'metadata': return { title: "Metadata Extraction", icon: Globe, desc: "View hidden file metadata and history." };
-      case 'geo': return { title: "Geolocation Analysis", icon: Globe, desc: "Estimate location from visual cues in media." };
+      case 'verification': return { title: "Verification Suite", icon: Globe, desc: "Combined metadata extraction and geolocation analysis." };
     }
   };
 

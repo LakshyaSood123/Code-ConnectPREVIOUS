@@ -21,8 +21,7 @@ const TABS: { id: ToolType; label: string; icon: any }[] = [
   { id: 'document', label: 'Document', icon: FileText },
   { id: 'fact-check', label: 'Fact Check', icon: Search },
   { id: 'propaganda', label: 'Propaganda', icon: AlertOctagon },
-  { id: 'metadata', label: 'Metadata', icon: Globe },
-  { id: 'geo', label: 'Geolocation', icon: MapPin },
+  { id: 'verification', label: 'Verification', icon: Globe },
 ];
 
 export default function Home() {
