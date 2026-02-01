@@ -4,18 +4,24 @@ import { ToolType } from '@shared/schema';
 
 interface MainCardProps {
   activeTool: ToolType;
-  onAnalyze: (data: { filename?: string; content?: string; file?: File }) => void;
+  onAnalyze: (data: { filename?: string; content?: string; file?: File; claimedLocation?: string; claimedEvent?: string }) => void;
   isAnalyzing: boolean;
 }
 
 export function MainCard({ activeTool, onAnalyze, isAnalyzing }: MainCardProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [textInput, setTextInput] = useState("");
+  const [claimedLocation, setClaimedLocation] = useState("");
+  const [claimedEvent, setClaimedEvent] = useState("");
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      onAnalyze({ filename: file.name, file });
+      onAnalyze({ 
+        filename: file.name, 
+        file,
+        ...(activeTool === 'verification' && { claimedLocation, claimedEvent })
+      });
       // Reset input so same file can be selected again
       e.target.value = '';
     }
@@ -30,34 +36,69 @@ export function MainCard({ activeTool, onAnalyze, isAnalyzing }: MainCardProps) 
   // Render content based on tool type
   const renderContent = () => {
     return (
-      <div 
-        className="file-drop-area group bg-[var(--panel)] border-border hover:bg-[var(--panel2)]/50 hover:border-[var(--accent)] transition-all duration-300 shadow-[var(--shadow)] hover:shadow-[var(--shadow-strong)]"
-        onClick={() => fileInputRef.current?.click()}
-      >
-        <input 
-          type="file" 
-          className="hidden" 
-          ref={fileInputRef} 
-          onChange={handleFileSelect}
-        />
-        <div className="w-16 h-16 rounded-full bg-[var(--accent)]/10 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-          <UploadCloud className="w-8 h-8 text-[var(--accent)]" />
+      <div className="space-y-4">
+        <div 
+          className="file-drop-area group bg-[var(--panel)] border-border hover:bg-[var(--panel2)]/50 hover:border-[var(--accent)] transition-all duration-300 shadow-[var(--shadow)] hover:shadow-[var(--shadow-strong)]"
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <input 
+            type="file" 
+            className="hidden" 
+            ref={fileInputRef} 
+            onChange={handleFileSelect}
+          />
+          <div className="w-16 h-16 rounded-full bg-[var(--accent)]/10 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+            <UploadCloud className="w-8 h-8 text-[var(--accent)]" />
+          </div>
+          <h3 className="text-xl font-semibold mb-2 text-[var(--text)]">
+            Drop files here or click to upload
+          </h3>
+          <p className="text-[var(--muted)] text-sm max-w-md mx-auto leading-relaxed">
+            Support for PDF, DOCX, JPG, PNG. Maximum file size 50MB.
+            {activeTool === 'verification' && " Analyzes metadata and geolocation landmarks."}
+            {activeTool === 'fact-check' && " Upload an article/document to verify claims."}
+            {activeTool === 'propaganda' && " Upload content to assess propaganda likelihood."}
+          </p>
+          <p className="mt-4 text-[10px] text-[var(--muted)] font-medium uppercase tracking-widest opacity-60">
+            Tip: name files with _real or _fake for demo outputs
+          </p>
+          <button className="btn btn-secondary mt-6 px-8 hover-elevate active-elevate-2">
+            Select Files
+          </button>
         </div>
-        <h3 className="text-xl font-semibold mb-2 text-[var(--text)]">
-          Drop files here or click to upload
-        </h3>
-        <p className="text-[var(--muted)] text-sm max-w-md mx-auto leading-relaxed">
-          Support for PDF, DOCX, JPG, PNG. Maximum file size 50MB.
-          {activeTool === 'verification' && " Analyzes metadata and geolocation landmarks."}
-          {activeTool === 'fact-check' && " Upload an article/document to verify claims."}
-          {activeTool === 'propaganda' && " Upload content to assess propaganda likelihood."}
-        </p>
-        <p className="mt-4 text-[10px] text-[var(--muted)] font-medium uppercase tracking-widest opacity-60">
-          Tip: name files with _real or _fake for demo outputs
-        </p>
-        <button className="btn btn-secondary mt-6 px-8 hover-elevate active-elevate-2">
-          Select Files
-        </button>
+
+        {activeTool === 'verification' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-[var(--panel)] rounded-[var(--radius)] border border-[var(--border)]">
+            <div>
+              <label className="block text-xs font-semibold text-[var(--text)] mb-2 uppercase tracking-wide">
+                Claimed Location
+              </label>
+              <input
+                type="text"
+                value={claimedLocation}
+                onChange={(e) => setClaimedLocation(e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                placeholder="e.g., India, New Delhi"
+                className="w-full px-3 py-2.5 bg-[var(--panel2)] border border-[var(--border)] rounded-[var(--radius)] text-sm text-[var(--text)] placeholder:text-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50 focus:border-[var(--accent)] transition-all"
+                data-testid="input-claimed-location"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[var(--text)] mb-2 uppercase tracking-wide">
+                Claimed Event <span className="text-[var(--muted)] font-normal">(optional)</span>
+              </label>
+              <input
+                type="text"
+                value={claimedEvent}
+                onChange={(e) => setClaimedEvent(e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                placeholder="e.g., earthquake, flood, protest"
+                className="w-full px-3 py-2.5 bg-[var(--panel2)] border border-[var(--border)] rounded-[var(--radius)] text-sm text-[var(--text)] placeholder:text-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50 focus:border-[var(--accent)] transition-all"
+                data-testid="input-claimed-event"
+              />
+            </div>
+          </div>
+        )}
       </div>
     );
   };

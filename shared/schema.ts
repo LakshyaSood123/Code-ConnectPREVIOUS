@@ -39,6 +39,14 @@ export const analysisResults = pgTable("analysis_results", {
     evidenceExcerpts: string[];
     matchedFacts: string[];
   }>(),
+  verification: jsonb("verification").$type<{
+    claimedLocation: string;
+    claimedEvent: string;
+    predictedLocation: string;
+    confidence: number;
+    matchStatus: "match" | "mismatch" | "insufficient";
+    reasons: string[];
+  }>(),
 });
 
 export const insertAnalysisResultSchema = createInsertSchema(analysisResults);

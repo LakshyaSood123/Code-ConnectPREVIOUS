@@ -7,6 +7,8 @@ type AnalysisRequest = {
   content?: string;
   toolType: ToolType;
   file?: File;
+  claimedLocation?: string;
+  claimedEvent?: string;
 };
 
 // Initial KPI stats
@@ -75,6 +77,7 @@ function generateMockResult(req: AnalysisRequest): AnalysisResult {
       geolocation: null,
       factCheck,
       propaganda: null,
+      verification: null,
     };
   }
 
@@ -128,11 +131,85 @@ function generateMockResult(req: AnalysisRequest): AnalysisResult {
       geolocation: null,
       factCheck: null,
       propaganda: propagandaData,
+      verification: null,
     };
   }
 
   if (req.toolType === 'verification') {
-    // Section A: Metadata Analysis
+    // Location prediction based on filename triggers
+    let predictedLocation = "Unknown";
+    let locationConfidence = 0.35;
+    let locationReasons: string[] = ["Insufficient visual cues (demo)"];
+    
+    if (filenameLower.includes("eiffel") || filenameLower.includes("paris") || filenameLower.includes("31001")) {
+      predictedLocation = "Paris, France";
+      locationConfidence = 0.94;
+      locationReasons = ["Landmark match: Eiffel Tower"];
+    } else if (filenameLower.includes("quake_turkey") || filenameLower.includes("turkey_32001")) {
+      predictedLocation = "Kahramanmaras, Turkey";
+      locationConfidence = 0.88;
+      locationReasons = ["Reference match: earthquake coverage image set", "Urban + rubble context consistent"];
+    } else if (filenameLower.includes("quake_japan") || filenameLower.includes("japan_32002")) {
+      predictedLocation = "Sendai, Japan";
+      locationConfidence = 0.86;
+      locationReasons = ["Reference match: earthquake image set"];
+    } else if (filenameLower.includes("quake_india") || filenameLower.includes("india_32003")) {
+      predictedLocation = "Uttarakhand, India";
+      locationConfidence = 0.82;
+      locationReasons = ["Reference match: India quake image set"];
+    }
+
+    // Compare claimed vs predicted
+    const claimedLocation = (req.claimedLocation || "").toLowerCase().trim().replace(/[^\w\s]/g, '').replace(/\s+/g, ' ');
+    const claimedEvent = req.claimedEvent || "";
+    const predictedNormalized = predictedLocation.toLowerCase().replace(/[^\w\s]/g, '').replace(/\s+/g, ' ');
+    
+    let matchStatus: "match" | "mismatch" | "insufficient" = "insufficient";
+    let locationMessage = "";
+    
+    if (predictedLocation === "Unknown") {
+      riskScore = 55;
+      priority = "MEDIUM";
+      decision = "MANUAL_REVIEW";
+      matchStatus = "insufficient";
+      locationMessage = "Cannot confirm location; insufficient cues.";
+    } else if (!claimedLocation) {
+      riskScore = 50;
+      priority = "MEDIUM";
+      decision = "MANUAL_REVIEW";
+      matchStatus = "insufficient";
+      locationMessage = "Provide a claimed location to verify.";
+    } else {
+      // Check if claimed contains predicted country or key city
+      const predictedParts = predictedNormalized.split(' ');
+      const hasMatch = predictedParts.some(part => part.length > 2 && claimedLocation.includes(part));
+      
+      if (hasMatch) {
+        riskScore = 12;
+        priority = "LOW";
+        decision = "APPROVE";
+        matchStatus = "match";
+        locationMessage = "Claim consistent with predicted location.";
+      } else {
+        riskScore = 85;
+        priority = "CRITICAL";
+        decision = "REJECT";
+        matchStatus = "mismatch";
+        locationMessage = "Claim mismatch: Not consistent with predicted location.";
+      }
+    }
+
+    // Build verification data for export
+    const verificationData = {
+      claimedLocation: req.claimedLocation || "",
+      claimedEvent: claimedEvent,
+      predictedLocation,
+      confidence: locationConfidence,
+      matchStatus,
+      reasons: [...locationReasons, locationMessage]
+    };
+
+    // Section A: Metadata Analysis (keep existing but simplified)
     let metaDecision = "MANUAL_REVIEW";
     let metaEvidence = ["Analysis required"];
     
@@ -156,35 +233,29 @@ function generateMockResult(req: AnalysisRequest): AnalysisResult {
     metadata = { decision: metaDecision, evidence: metaEvidence };
 
     // Section B: Geolocation Verification
-    let geoDecision = "MANUAL_REVIEW";
-    let geoEvidence = ["Needs review"];
-    
-    if (isFake) {
-      geoDecision = "REJECT";
-      geoEvidence = ["No reliable match found", "Visual cues contradict landmarks"];
-    } else if (isReal) {
-      geoDecision = "APPROVE";
-      geoEvidence = ["High-confidence location verification", "Matched visual landmarks"];
-    } else {
-      geoEvidence = ["Moderate confidence match", "Ambiguous visual cues"];
-    }
+    let geoDecision = matchStatus === "match" ? "APPROVE" : matchStatus === "mismatch" ? "REJECT" : "MANUAL_REVIEW";
+    let geoEvidence = [locationMessage, ...locationReasons];
     geolocation = { decision: geoDecision, evidence: geoEvidence };
 
-    // Result Summary Logic
-    if (metaDecision === "REJECT" || geoDecision === "REJECT") {
-      riskScore = Math.floor(Math.random() * 5) + 90; // 90-95
-      priority = "CRITICAL";
-      decision = "REJECT";
-    } else if (metaDecision === "APPROVE" && geoDecision === "APPROVE") {
-      riskScore = Math.floor(Math.random() * 5) + 10; // 10-15
-      priority = "LOW";
-      decision = "APPROVE";
-    } else {
-      riskScore = Math.floor(Math.random() * 15) + 50; // 50-65
-      priority = "MEDIUM";
-      decision = "MANUAL_REVIEW";
-    }
     evidence = ["Combined verification complete. See sections for details."];
+
+    return {
+      id: Math.floor(Math.random() * 100000),
+      filename: req.filename || `verification_${Date.now()}.txt`,
+      toolType: req.toolType,
+      riskScore,
+      priority,
+      decision,
+      evidence,
+      actionRequired: decision === "MANUAL_REVIEW" ? "Analyst verification needed" : null,
+      timestamp: new Date(),
+      previewUrl,
+      metadata,
+      geolocation,
+      factCheck: null,
+      propaganda: null,
+      verification: verificationData,
+    };
 
   } else {
     // Existing logic for other tools
@@ -263,6 +334,7 @@ function generateMockResult(req: AnalysisRequest): AnalysisResult {
     geolocation,
     factCheck,
     propaganda: null,
+    verification: null,
   };
 }
 
