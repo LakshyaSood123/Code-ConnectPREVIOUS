@@ -37,10 +37,26 @@ export default function Home() {
   } = useAnalysisSimulation();
 
   const handleExport = () => {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(results, null, 2));
+    const exportData = {
+      generatedAt: new Date().toISOString(),
+      appName: "Reagvis Labs",
+      activeTool: activeTool,
+      summary: {
+        total: stats.total,
+        rejected: stats.rejected,
+        manualReview: stats.manual,
+        approved: stats.approved
+      },
+      results: results
+    };
+    
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '').replace('T', '-').split('Z')[0];
+    const filename = `reagvis-labs-report-${timestamp}.json`;
+    
     const downloadAnchorNode = document.createElement('a');
     downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute("download", "verification_report.json");
+    downloadAnchorNode.setAttribute("download", filename);
     document.body.appendChild(downloadAnchorNode);
     downloadAnchorNode.click();
     downloadAnchorNode.remove();

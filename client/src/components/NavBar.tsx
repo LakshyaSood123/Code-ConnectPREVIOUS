@@ -6,11 +6,9 @@ export function NavBar() {
     <nav className="h-16 border-b border-border bg-panel sticky top-0 z-50 backdrop-blur-md bg-opacity-80">
       <div className="container mx-auto px-4 h-full flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-            <ShieldCheck className="w-5 h-5 text-white" />
-          </div>
+          <img src="/brand-logo.png" alt="Reagvis Labs" className="h-10 w-auto" />
           <span className="font-display font-bold text-xl tracking-tight text-[var(--text)]">
-            Verifi<span className="text-[var(--accent)]">Suite</span>
+            Reagvis Labs
           </span>
           <div className="hidden md:flex ml-4 pill pill-online gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-[var(--ok)] animate-pulse" />
@@ -28,8 +26,7 @@ export function NavBar() {
           
           <div className="flex items-center gap-3 pl-2">
             <div className="text-right hidden sm:block">
-              <p className="text-sm font-medium text-[var(--text)]">Alex Morgan</p>
-              <p className="text-xs text-[var(--muted)]">Lead Analyst</p>
+              <p className="text-sm font-medium text-[var(--text)]">Admin</p>
             </div>
             <div className="w-9 h-9 rounded-full bg-[var(--panel2)] border border-[var(--border)] flex items-center justify-center">
               <User className="w-5 h-5 text-[var(--muted)]" />
