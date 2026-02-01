@@ -229,7 +229,55 @@ export function ResultRow({ result, onApprove, onReject, onManualReview }: Resul
                   </div>
                 )}
 
-                {!result.metadata && !result.factCheck && (
+                {result.toolType === 'propaganda' && result.propaganda && (
+                  <div>
+                    <h5 className="text-sm font-semibold text-[var(--text)] mb-3 flex items-center gap-2">
+                      <ShieldAlert className="w-4 h-4 text-[var(--danger)]" />
+                      Propaganda Assessment
+                    </h5>
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <span className="text-[10px] font-bold px-2 py-1 rounded bg-[var(--danger)]/15 text-[var(--danger)] uppercase tracking-wide">
+                          HIGH PROPAGANDA LIKELIHOOD
+                        </span>
+                        <span className="text-xs text-[var(--muted)]">
+                          Score: {result.propaganda.score}%
+                        </span>
+                        <span className="text-xs text-[var(--muted)]">
+                          Risk: {result.propaganda.riskLevel}
+                        </span>
+                      </div>
+
+                      <div>
+                        <h6 className="text-xs font-semibold text-[var(--text)] mb-2">Indicators Found</h6>
+                        <div className="flex flex-wrap gap-2">
+                          {result.propaganda.indicatorsFound.map((indicator, idx) => (
+                            <span 
+                              key={idx} 
+                              className="text-[10px] px-2 py-1 rounded-full bg-[var(--danger)]/10 text-[var(--danger)] border border-[var(--danger)]/20"
+                            >
+                              {indicator}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <h6 className="text-xs font-semibold text-[var(--text)] mb-2">Evidence Excerpts</h6>
+                        <ul className="space-y-1.5">
+                          {result.propaganda.evidenceExcerpts.map((excerpt, idx) => (
+                            <li key={idx} className="flex items-start gap-2 text-xs text-[var(--muted)]">
+                              <span className="mt-1.5 w-1 h-1 rounded-full bg-[var(--danger)]/40 shrink-0" />
+                              {excerpt}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {!result.metadata && !result.factCheck && !result.propaganda && (
                   <div>
                     <h5 className="text-sm font-semibold text-[var(--text)] mb-3 flex items-center gap-2">
                       <AlertCircle className="w-4 h-4 text-[var(--accent)]" />

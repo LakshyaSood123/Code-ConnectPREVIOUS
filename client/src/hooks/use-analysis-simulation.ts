@@ -74,6 +74,60 @@ function generateMockResult(req: AnalysisRequest): AnalysisResult {
       metadata: null,
       geolocation: null,
       factCheck,
+      propaganda: null,
+    };
+  }
+
+  // Propaganda demo trigger (quiet hour / gossamer ledger)
+  const isPropagandaDemo = req.toolType === 'propaganda' && (
+    filenameLower.includes("25001") ||
+    filenameLower.includes("quiet_hour") ||
+    filenameLower.includes("gossamer_ledger")
+  );
+
+  if (isPropagandaDemo) {
+    riskScore = 78; // Fixed score for consistency
+    priority = "CRITICAL";
+    decision = "REJECT";
+    
+    const propagandaData = {
+      trigger: "filename:25001",
+      score: 78,
+      riskLevel: "CRITICAL",
+      indicatorsFound: [
+        "Loaded framing / rhetorical question (\"for your safety…or for their control?\")",
+        "Call-to-action language (\"Don't let them…\")",
+        "'They'/oppressor framing (\"The silence they seek…\")",
+        "Emotional appeal / fear of suppression (\"silence of submission\")"
+      ],
+      evidenceExcerpts: [
+        "Source header: \"The Gossamer Ledger\"",
+        "Headline: \"QUIET HOUR ORDINANCE: 'FOR YOUR SAFETY,' OR FOR THEIR CONTROL?\"",
+        "Byline/date: By A. Thorne | October 26, 2023",
+        "\"Is 'quiet' just code for compliance?\"",
+        "\"Don't let them turn down the volume on your rights.\"",
+        "\"The silence they seek is the silence of submission.\""
+      ],
+      matchedFacts: []
+    };
+
+    evidence = propagandaData.evidenceExcerpts;
+
+    return {
+      id: Math.floor(Math.random() * 100000),
+      filename: req.filename || `propaganda_${Date.now()}.txt`,
+      toolType: req.toolType,
+      riskScore,
+      priority,
+      decision,
+      evidence,
+      actionRequired: null,
+      timestamp: new Date(),
+      previewUrl,
+      metadata: null,
+      geolocation: null,
+      factCheck: null,
+      propaganda: propagandaData,
     };
   }
 
@@ -208,6 +262,7 @@ function generateMockResult(req: AnalysisRequest): AnalysisResult {
     metadata,
     geolocation,
     factCheck,
+    propaganda: null,
   };
 }
 

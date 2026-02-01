@@ -31,6 +31,14 @@ export const analysisResults = pgTable("analysis_results", {
     title?: string;
     publisher?: string;
   }>(),
+  propaganda: jsonb("propaganda").$type<{
+    trigger: string;
+    score: number;
+    riskLevel: string;
+    indicatorsFound: string[];
+    evidenceExcerpts: string[];
+    matchedFacts: string[];
+  }>(),
 });
 
 export const insertAnalysisResultSchema = createInsertSchema(analysisResults);
