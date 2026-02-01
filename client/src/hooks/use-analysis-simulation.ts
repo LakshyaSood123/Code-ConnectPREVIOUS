@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import type { ToolType, AnalysisResult, KpiStats } from '@shared/schema';
 
 // Mock types for our simulation
@@ -113,7 +113,7 @@ export function useAnalysisSimulation() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Revoke object URLs on unmount to prevent leaks
-  React.useEffect(() => {
+  useEffect(() => {
     return () => {
       results.forEach(r => {
         if (r.previewUrl) URL.revokeObjectURL(r.previewUrl);
