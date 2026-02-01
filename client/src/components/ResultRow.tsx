@@ -51,13 +51,14 @@ export function ResultRow({ result, onApprove, onReject }: ResultRowProps) {
 
   return (
     <motion.div 
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-[var(--panel)] border border-[var(--border)] rounded-[var(--radius)] shadow-[var(--shadow)] mb-3 overflow-hidden"
+      transition={{ duration: 0.3, ease: "easeOut" }}
+      className="bg-[var(--panel)] border border-[var(--border)] rounded-[var(--radius)] shadow-[var(--shadow)] hover:shadow-[var(--shadow-strong)] mb-4 overflow-hidden transition-all duration-200"
     >
       {/* Header Row */}
       <div 
-        className="p-3 flex flex-col md:flex-row items-center gap-4 cursor-pointer hover:bg-white/5 transition-colors"
+        className="p-4 flex flex-col md:flex-row items-center gap-4 cursor-pointer hover:bg-[var(--panel2)]/20 transition-colors"
         onClick={() => setExpanded(!expanded)}
       >
         <div className="flex items-center gap-4 flex-1 w-full">
@@ -149,17 +150,17 @@ export function ResultRow({ result, onApprove, onReject }: ResultRowProps) {
                    </p>
                 </div>
 
-                <div className="flex gap-3">
+                <div className="flex gap-4">
                   <button 
                     onClick={(e) => { e.stopPropagation(); onApprove(result.id); }}
-                    className="flex-1 btn btn-secondary h-9 border-[var(--ok)]/30 hover:bg-[var(--ok)]/10 hover:text-[var(--ok)]"
+                    className="flex-1 btn btn-secondary h-11 border-[var(--ok)]/30 hover:bg-[var(--ok)]/10 hover:text-[var(--ok)] font-bold tracking-wide uppercase active:scale-[0.98] transition-transform duration-150"
                   >
                     <Check className="w-4 h-4" />
                     Approve
                   </button>
                   <button 
                     onClick={(e) => { e.stopPropagation(); onReject(result.id); }}
-                    className="flex-1 btn btn-secondary h-9 border-[var(--danger)]/30 hover:bg-[var(--danger)]/10 hover:text-[var(--danger)]"
+                    className="flex-1 btn btn-secondary h-11 border-[var(--danger)]/30 hover:bg-[var(--danger)]/10 hover:text-[var(--danger)] font-bold tracking-wide uppercase active:scale-[0.98] transition-transform duration-150"
                   >
                     <X className="w-4 h-4" />
                     Reject

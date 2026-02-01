@@ -31,7 +31,7 @@ export function MainCard({ activeTool, onAnalyze, isAnalyzing }: MainCardProps) 
   const renderContent = () => {
     return (
       <div 
-        className="file-drop-area group"
+        className="file-drop-area group bg-[var(--panel)] border-border hover:bg-[var(--panel2)]/50 hover:border-[var(--accent)] transition-all duration-300 shadow-[var(--shadow)] hover:shadow-[var(--shadow-strong)]"
         onClick={() => fileInputRef.current?.click()}
       >
         <input 
@@ -46,14 +46,17 @@ export function MainCard({ activeTool, onAnalyze, isAnalyzing }: MainCardProps) 
         <h3 className="text-xl font-semibold mb-2 text-[var(--text)]">
           Drop files here or click to upload
         </h3>
-        <p className="text-[var(--muted)] text-sm max-w-md mx-auto">
+        <p className="text-[var(--muted)] text-sm max-w-md mx-auto leading-relaxed">
           Support for PDF, DOCX, JPG, PNG. Maximum file size 50MB.
           {activeTool === 'metadata' && " Extracts EXIF, XMP, and IPTC data."}
           {activeTool === 'geo' && " Analyzes visual landmarks for geolocation."}
           {activeTool === 'fact-check' && " Upload an article/document to verify claims."}
           {activeTool === 'propaganda' && " Upload content to assess propaganda likelihood."}
         </p>
-        <button className="btn btn-secondary mt-6">
+        <p className="mt-4 text-[10px] text-[var(--muted)] font-medium uppercase tracking-widest opacity-60">
+          Tip: name files with _real or _fake for demo outputs
+        </p>
+        <button className="btn btn-secondary mt-6 px-8 hover-elevate active-elevate-2">
           Select Files
         </button>
       </div>

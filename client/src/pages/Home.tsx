@@ -60,23 +60,30 @@ export default function Home() {
     document.body.appendChild(downloadAnchorNode);
     downloadAnchorNode.click();
     downloadAnchorNode.remove();
+    
+    // Show toast after download
+    runAnalysis({ filename: `Report: ${filename}`, toolType: activeTool }).then(() => {
+      // Logic handled via simulation toast for demo simplicity, but explicitly setting state here if needed
+    });
   };
 
   return (
-    <div className="min-h-screen bg-[var(--bg)] pb-20 font-sans">
+    <div className="min-h-screen bg-[var(--bg)] pb-20 font-sans selection:bg-[var(--accent)] selection:text-white">
       <NavBar />
       
-      <main className="container mx-auto px-4 pt-8">
+      <main className="max-w-[1280px] mx-auto px-6 pt-12">
         {/* Hero Section */}
-        <div className="mb-10 text-center md:text-left">
+        <div className="mb-12 text-center md:text-left">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col md:flex-row md:items-end justify-between gap-4"
+            className="flex flex-col md:flex-row md:items-end justify-between gap-6"
           >
             <div>
-              <h1 className="heading-1 mb-2">Advanced Verification</h1>
-              <p className="text-xl text-[var(--muted)] max-w-2xl">
+              <h1 className="text-5xl md:text-6xl font-bold text-[var(--text)] tracking-tight mb-4 leading-tight">
+                Advanced Verification
+              </h1>
+              <p className="text-lg md:text-xl text-[var(--muted)] max-w-2xl leading-relaxed">
                 Analyze digital assets using AI-driven forensics, semantic analysis, and metadata verification.
               </p>
             </div>
@@ -84,7 +91,7 @@ export default function Home() {
             <button 
               onClick={handleExport}
               disabled={results.length === 0}
-              className="btn btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn btn-secondary disabled:opacity-50 disabled:cursor-not-allowed hover-elevate active-elevate-2 h-11 px-6 text-sm font-semibold tracking-wide uppercase transition-all"
             >
               <Download className="w-4 h-4" />
               Export Report
@@ -97,12 +104,13 @@ export default function Home() {
            initial={{ opacity: 0, y: 20 }}
            animate={{ opacity: 1, y: 0 }}
            transition={{ delay: 0.1 }}
+           className="mb-12"
         >
           <KpiTiles stats={stats} />
         </motion.div>
 
         {/* Tool Tabs */}
-        <div className="flex flex-wrap gap-2 mb-6 border-b border-[var(--border)] pb-1">
+        <div className="flex flex-wrap gap-1 mb-8 border-b border-[var(--border)]">
           {TABS.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTool === tab.id;
@@ -111,16 +119,19 @@ export default function Home() {
                 key={tab.id}
                 onClick={() => setActiveTool(tab.id)}
                 className={cn(
-                  "flex items-center gap-2 px-4 py-3 rounded-t-lg font-medium text-sm transition-all relative top-[1px]",
+                  "flex items-center gap-2 px-6 py-4 font-semibold text-sm transition-all relative",
                   isActive 
-                    ? "text-[var(--accent)] bg-[var(--panel)] border-x border-t border-[var(--border)]" 
-                    : "text-[var(--muted)] hover:text-[var(--text)] hover:bg-white/5"
+                    ? "text-[var(--accent)] bg-[var(--panel2)]/50" 
+                    : "text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--panel2)]/30"
                 )}
               >
                 <Icon className={cn("w-4 h-4", isActive ? "text-[var(--accent)]" : "text-[var(--muted)]")} />
                 {tab.label}
                 {isActive && (
-                  <div className="absolute top-0 left-0 w-full h-[2px] bg-[var(--accent)] rounded-t-lg" />
+                  <motion.div 
+                    layoutId="activeTab"
+                    className="absolute bottom-0 left-0 w-full h-[3px] bg-[var(--accent)]" 
+                  />
                 )}
               </button>
             );
@@ -183,17 +194,22 @@ export default function Home() {
       <AnimatePresence>
         {toastMessage && (
           <motion.div
-            initial={{ opacity: 0, y: 50, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className="fixed bottom-8 right-8 z-50 bg-[var(--panel)] border border-[var(--border)] shadow-2xl rounded-lg p-4 flex items-center gap-3 pr-6"
+            initial={{ opacity: 0, y: 50, x: 20 }}
+            animate={{ opacity: 1, y: 0, x: 0 }}
+            exit={{ opacity: 0, y: 50, x: 20 }}
+            className="fixed bottom-8 right-8 z-[100] bg-[var(--panel)] border border-[var(--border)] shadow-[var(--shadow-strong)] rounded-[var(--radius)] p-5 flex items-center gap-4 min-w-[300px]"
           >
             {isAnalyzing ? (
                <Loader2 className="w-5 h-5 text-[var(--accent)] animate-spin" />
             ) : (
-               <div className="w-2 h-2 rounded-full bg-[var(--ok)]" />
+               <div className="w-3 h-3 rounded-full bg-[var(--ok)] shadow-[0_0_12px_var(--ok)]" />
             )}
-            <span className="font-medium text-[var(--text)] text-sm">{toastMessage}</span>
+            <div className="flex flex-col">
+              <span className="font-bold text-[var(--text)] text-sm tracking-tight">
+                {isAnalyzing ? "Processing..." : "Action Complete"}
+              </span>
+              <span className="text-[var(--muted)] text-xs font-medium">{toastMessage}</span>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
