@@ -43,6 +43,7 @@ export const analysisResults = pgTable("analysis_results", {
     claimedLocation: string;
     claimedEvent: string;
     predictedLocation: string;
+    predictedEvent: string;
     confidence: number;
     matchStatus: "match" | "mismatch" | "insufficient";
     reasons: string[];

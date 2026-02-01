@@ -60,7 +60,9 @@ export function MainCard({ activeTool, onAnalyze, isAnalyzing }: MainCardProps) 
             {activeTool === 'propaganda' && " Upload content to assess propaganda likelihood."}
           </p>
           <p className="mt-4 text-[10px] text-[var(--muted)] font-medium uppercase tracking-widest opacity-60">
-            Tip: name files with _real or _fake for demo outputs
+            {activeTool === 'verification' 
+              ? "Tip: Use demo filenames like quake_turkey_32001.jpg, flood_kanchipuram_33001.jpg, eiffel_31001.jpg"
+              : "Tip: name files with _real or _fake for demo outputs"}
           </p>
           <button className="btn btn-secondary mt-6 px-8 hover-elevate active-elevate-2">
             Select Files

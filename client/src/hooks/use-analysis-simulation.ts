@@ -138,25 +138,25 @@ function generateMockResult(req: AnalysisRequest): AnalysisResult {
   if (req.toolType === 'verification') {
     // Location prediction based on filename triggers
     let predictedLocation = "Unknown";
+    let predictedEvent = "Unknown";
     let locationConfidence = 0.35;
-    let locationReasons: string[] = ["Insufficient visual cues (demo)"];
+    let locationReasons: string[] = ["Insufficient cues for reliable verification (demo)"];
     
     if (filenameLower.includes("eiffel") || filenameLower.includes("paris") || filenameLower.includes("31001")) {
       predictedLocation = "Paris, France";
+      predictedEvent = "landmark photo";
       locationConfidence = 0.94;
-      locationReasons = ["Landmark match: Eiffel Tower"];
-    } else if (filenameLower.includes("quake_turkey") || filenameLower.includes("turkey_32001")) {
+      locationReasons = ["Landmark match: Eiffel Tower silhouette", "Urban skyline consistent with Paris"];
+    } else if (filenameLower.includes("quake_turkey") || filenameLower.includes("turkey_32001") || filenameLower.includes("32001")) {
       predictedLocation = "Kahramanmaras, Turkey";
+      predictedEvent = "earthquake";
       locationConfidence = 0.88;
-      locationReasons = ["Reference match: earthquake coverage image set", "Urban + rubble context consistent"];
-    } else if (filenameLower.includes("quake_japan") || filenameLower.includes("japan_32002")) {
-      predictedLocation = "Sendai, Japan";
-      locationConfidence = 0.86;
-      locationReasons = ["Reference match: earthquake image set"];
-    } else if (filenameLower.includes("quake_india") || filenameLower.includes("india_32003")) {
-      predictedLocation = "Uttarakhand, India";
-      locationConfidence = 0.82;
-      locationReasons = ["Reference match: India quake image set"];
+      locationReasons = ["Reference match: earthquake scene (demo)", "Context cues consistent with quake aftermath (demo)"];
+    } else if (filenameLower.includes("flood_kanchipuram") || filenameLower.includes("kanchipuram") || filenameLower.includes("tamilnadu") || filenameLower.includes("33001")) {
+      predictedLocation = "Kanchipuram District, Tamil Nadu, India";
+      predictedEvent = "flood";
+      locationConfidence = 0.90;
+      locationReasons = ["Reference match: flood aerial inundation (demo)", "Urban inundation context consistent with district flooding (demo)"];
     }
 
     // Compare claimed vs predicted
@@ -204,6 +204,7 @@ function generateMockResult(req: AnalysisRequest): AnalysisResult {
       claimedLocation: req.claimedLocation || "",
       claimedEvent: claimedEvent,
       predictedLocation,
+      predictedEvent,
       confidence: locationConfidence,
       matchStatus,
       reasons: [...locationReasons, locationMessage]

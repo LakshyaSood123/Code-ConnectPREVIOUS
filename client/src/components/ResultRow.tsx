@@ -174,15 +174,29 @@ export function ResultRow({ result, onApprove, onReject, onManualReview }: Resul
                     <div className="space-y-3">
                       <div className="grid grid-cols-2 gap-4 text-xs">
                         <div>
-                          <span className="text-[var(--muted)]">Claimed:</span>
+                          <span className="text-[var(--muted)]">Claimed Location:</span>
                           <p className="text-[var(--text)] font-medium">
                             {result.verification.claimedLocation || <span className="italic text-[var(--muted)]">Not provided</span>}
                           </p>
                         </div>
                         <div>
-                          <span className="text-[var(--muted)]">Predicted:</span>
+                          <span className="text-[var(--muted)]">Predicted Location:</span>
                           <p className="text-[var(--text)] font-medium">
                             {result.verification.predictedLocation} ({(result.verification.confidence * 100).toFixed(0)}%)
+                          </p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 text-xs">
+                        <div>
+                          <span className="text-[var(--muted)]">Claimed Event:</span>
+                          <p className="text-[var(--text)] font-medium">
+                            {result.verification.claimedEvent || <span className="italic text-[var(--muted)]">Not provided</span>}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-[var(--muted)]">Predicted Event:</span>
+                          <p className="text-[var(--text)] font-medium">
+                            {result.verification.predictedEvent}
                           </p>
                         </div>
                       </div>
