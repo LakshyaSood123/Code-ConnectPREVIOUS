@@ -23,6 +23,14 @@ export const analysisResults = pgTable("analysis_results", {
     decision: string;
     evidence: string[];
   }>(),
+  factCheck: jsonb("fact_check").$type<{
+    verdict: string;
+    confidence: number;
+    referenceId: string;
+    trigger: string;
+    title?: string;
+    publisher?: string;
+  }>(),
 });
 
 export const insertAnalysisResultSchema = createInsertSchema(analysisResults);

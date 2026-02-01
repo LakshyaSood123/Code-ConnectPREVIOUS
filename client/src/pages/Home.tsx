@@ -10,7 +10,6 @@ import {
   Search, 
   AlertOctagon, 
   Globe, 
-  MapPin, 
   Download,
   Loader2
 } from 'lucide-react';
@@ -59,11 +58,6 @@ export default function Home() {
     document.body.appendChild(downloadAnchorNode);
     downloadAnchorNode.click();
     downloadAnchorNode.remove();
-    
-    // Show toast after download
-    runAnalysis({ filename: `Report: ${filename}`, toolType: activeTool }).then(() => {
-      // Logic handled via simulation toast for demo simplicity, but explicitly setting state here if needed
-    });
   };
 
   return (

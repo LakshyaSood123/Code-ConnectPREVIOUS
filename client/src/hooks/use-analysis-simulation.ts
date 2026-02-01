@@ -34,6 +34,48 @@ function generateMockResult(req: AnalysisRequest): AnalysisResult {
   let evidence: string[] = ["Inconclusive patterns", "Standard encoding detected"];
   let metadata: any = null;
   let geolocation: any = null;
+  let factCheck: any = null;
+
+  // Special Fact Check demo trigger (sensex budget day)
+  const filenameLower = (req.filename || "").toLowerCase();
+  const isSensexDemo = req.toolType === 'fact-check' && (
+    filenameLower.includes("14001") ||
+    filenameLower.includes("sensex_budgetday") ||
+    filenameLower.includes("fact_sensex")
+  );
+
+  if (isSensexDemo) {
+    riskScore = Math.floor(Math.random() * 7) + 8; // 8-15
+    priority = "LOW";
+    decision = "APPROVE";
+    evidence = [
+      "Over the past 15 years, the Sensex and Nifty have shown mixed but slightly positive performance on Budget day. The Sensex delivered an average return of 0.35%, while the Nifty followed a similar trend. Markets tend to perform better in the weeks after the Budget as investors focus more on fundamentals than on day-one reactions."
+    ];
+    factCheck = {
+      verdict: "verified",
+      confidence: 0.92,
+      referenceId: "sensex_budgetday_15y",
+      trigger: "filename:14001",
+      title: "Sensex averages 0.35% gain on Budget day over last 15 years",
+      publisher: "Free Press Journal"
+    };
+
+    return {
+      id: Math.floor(Math.random() * 100000),
+      filename: req.filename || `fact_check_${Date.now()}.txt`,
+      toolType: req.toolType,
+      riskScore,
+      priority,
+      decision,
+      evidence,
+      actionRequired: null,
+      timestamp: new Date(),
+      previewUrl,
+      metadata: null,
+      geolocation: null,
+      factCheck,
+    };
+  }
 
   if (req.toolType === 'verification') {
     // Section A: Metadata Analysis
@@ -165,6 +207,7 @@ function generateMockResult(req: AnalysisRequest): AnalysisResult {
     previewUrl,
     metadata,
     geolocation,
+    factCheck,
   };
 }
 

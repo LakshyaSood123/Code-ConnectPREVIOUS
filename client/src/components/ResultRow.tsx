@@ -9,7 +9,8 @@ import {
   MapPin, 
   Search,
   ChevronRight,
-  ShieldAlert
+  ShieldAlert,
+  CheckCircle2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -181,7 +182,44 @@ export function ResultRow({ result, onApprove, onReject }: ResultRowProps) {
                   </div>
                 )}
 
-                {!result.metadata && (
+                {result.toolType === 'fact-check' && result.factCheck && (
+                  <div>
+                    <h5 className="text-sm font-semibold text-[var(--text)] mb-3 flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-[var(--ok)]" />
+                      Fact Check Result
+                    </h5>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold px-2 py-1 rounded bg-[var(--ok)]/15 text-[var(--ok)] uppercase tracking-wide">
+                          {result.factCheck.verdict === 'verified' ? 'VERIFIED FACT' : result.factCheck.verdict}
+                        </span>
+                        <span className="text-xs text-[var(--muted)]">
+                          Confidence: {(result.factCheck.confidence * 100).toFixed(0)}%
+                        </span>
+                      </div>
+                      {result.factCheck.title && (
+                        <p className="text-sm font-medium text-[var(--text)]">
+                          {result.factCheck.title}
+                        </p>
+                      )}
+                      {result.factCheck.publisher && (
+                        <p className="text-xs text-[var(--muted)]">
+                          Publisher: <span className="text-[var(--accent)]">{result.factCheck.publisher}</span>
+                        </p>
+                      )}
+                    </div>
+                    <ul className="mt-4 space-y-2">
+                      {result.evidence.map((item, idx) => (
+                        <li key={idx} className="flex items-start gap-2 text-xs text-[var(--muted)]">
+                          <span className="mt-1.5 w-1 h-1 rounded-full bg-[var(--muted)]/30 shrink-0" />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {!result.metadata && !result.factCheck && (
                   <div>
                     <h5 className="text-sm font-semibold text-[var(--text)] mb-3 flex items-center gap-2">
                       <AlertCircle className="w-4 h-4 text-[var(--accent)]" />
