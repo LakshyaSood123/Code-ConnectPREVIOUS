@@ -39,7 +39,7 @@ export default function Home() {
   const handleExport = () => {
     const exportData = {
       generatedAt: new Date().toISOString(),
-      appName: "Reagvis Labs",
+      appName: "Reagvis Labs Pvt. Ltd.",
       activeTool: activeTool,
       summary: {
         total: stats.total,

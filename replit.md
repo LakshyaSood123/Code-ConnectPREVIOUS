@@ -1,8 +1,8 @@
-# Reagvis Labs
+# Reagvis Labs Pvt. Ltd.
 
 ## Overview
 
-Reagvis Labs is a frontend-only verification demo web application built with React and Vite. The app simulates a document/content verification workflow with features including file upload, analysis processing, results display with KPI tiles, and report export functionality. All analysis logic is client-side with deterministic mock outputs for demo purposes - no backend API calls or ML models are involved.
+Reagvis Labs Pvt. Ltd. is a frontend-only verification demo web application built with React and Vite. The app simulates a document/content verification workflow with features including file upload, analysis processing, results display with KPI tiles, and report export functionality. All analysis logic is client-side with deterministic mock outputs for demo purposes - no backend API calls or ML models are involved.
 
 The application provides multiple verification tools (Document, Fact Check, Propaganda, Metadata, Geolocation) with a dark-themed UI and simulated processing states.
 
