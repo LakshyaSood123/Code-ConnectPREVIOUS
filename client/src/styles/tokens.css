@@ -1,0 +1,65 @@
+:root {
+  /* Dark Theme Base Colors */
+  --bg-app: #101113;
+  --panel: #1a1b1e;
+  --panel2: #25262b;
+  --border: #2c2e33;
+  
+  /* Text Colors */
+  --text-primary: #ffffff;
+  --text-secondary: #c1c2c5;
+  --text-muted: #909296;
+  
+  /* KPI Gradients */
+  --kpi-teal: linear-gradient(135deg, #087f5b 0%, #099268 100%);
+  --kpi-orange: linear-gradient(135deg, #e67700 0%, #f08c00 100%);
+  --kpi-pink: linear-gradient(135deg, #d6336c 0%, #e64980 100%);
+  --kpi-green: linear-gradient(135deg, #2b8a3e 0%, #37b24d 100%);
+  
+  /* Brand/Accent */
+  --brand-primary: #339af0;
+  --brand-glow: rgba(51, 154, 240, 0.35);
+  
+  /* Status Colors */
+  --status-critical: #ff6b6b;
+  --status-warning: #fcc419;
+  --status-success: #51cf66;
+  --status-info: #339af0;
+  
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  
+  /* Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+}
+
+/* Base Styles via tokens */
+body {
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-app); 
+}
+::-webkit-scrollbar-thumb {
+  background: var(--panel2); 
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border); 
+}

@@ -1,0 +1,174 @@
+/* Card Styles */
+.card {
+  background-color: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  border-color: #373a40;
+}
+
+.card-muted {
+  background-color: var(--panel2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+/* Typography */
+.heading-1 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 2.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  background: linear-gradient(to right, #fff, #a5d8ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.heading-2 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.text-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+}
+
+.btn-primary {
+  background: var(--brand-primary);
+  color: white;
+  box-shadow: 0 4px 12px var(--brand-glow);
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px var(--brand-glow);
+  filter: brightness(1.1);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  background: var(--panel2);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+  background: #2c2e33;
+  border-color: #5c5f66;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+
+/* Pills & Badges */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.pill-online {
+  background: rgba(81, 207, 102, 0.15);
+  color: var(--status-success);
+  border: 1px solid rgba(81, 207, 102, 0.2);
+}
+
+.pill-critical {
+  background: rgba(255, 107, 107, 0.15);
+  color: var(--status-critical);
+}
+
+.pill-warning {
+  background: rgba(252, 196, 25, 0.15);
+  color: var(--status-warning);
+}
+
+.pill-success {
+  background: rgba(81, 207, 102, 0.15);
+  color: var(--status-success);
+}
+
+.pill-info {
+  background: rgba(51, 154, 240, 0.15);
+  color: var(--status-info);
+}
+
+/* KPI Gradients */
+.bg-gradient-teal { background: var(--kpi-teal); }
+.bg-gradient-orange { background: var(--kpi-orange); }
+.bg-gradient-pink { background: var(--kpi-pink); }
+.bg-gradient-green { background: var(--kpi-green); }
+
+/* Animation Utils */
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.5s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Custom file input */
+.file-drop-area {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-lg);
+  padding: 40px;
+  text-align: center;
+  transition: all 0.2s ease;
+  background: rgba(255, 255, 255, 0.01);
+  cursor: pointer;
+}
+
+.file-drop-area:hover {
+  border-color: var(--brand-primary);
+  background: rgba(51, 154, 240, 0.05);
+}
