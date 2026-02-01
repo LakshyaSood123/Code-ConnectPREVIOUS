@@ -28,72 +28,35 @@ export function MainCard({ activeTool, onAnalyze, isAnalyzing }: MainCardProps) 
 
   // Render content based on tool type
   const renderContent = () => {
-    switch (activeTool) {
-      case 'document':
-      case 'metadata':
-      case 'geo':
-        return (
-          <div 
-            className="file-drop-area group"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <input 
-              type="file" 
-              className="hidden" 
-              ref={fileInputRef} 
-              onChange={handleFileSelect}
-            />
-            <div className="w-16 h-16 rounded-full bg-[var(--accent)]/10 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-              <UploadCloud className="w-8 h-8 text-[var(--accent)]" />
-            </div>
-            <h3 className="text-xl font-semibold mb-2 text-[var(--text)]">
-              Drop files here or click to upload
-            </h3>
-            <p className="text-[var(--muted)] text-sm max-w-md mx-auto">
-              Support for PDF, DOCX, JPG, PNG. Maximum file size 50MB.
-              {activeTool === 'metadata' && " Extracts EXIF, XMP, and IPTC data."}
-              {activeTool === 'geo' && " Analyzes visual landmarks for geolocation."}
-            </p>
-            <button className="btn btn-secondary mt-6">
-              Select Files
-            </button>
-          </div>
-        );
-
-      case 'fact-check':
-      case 'propaganda':
-        return (
-          <div className="space-y-4">
-            <div className="relative">
-              <textarea
-                value={textInput}
-                onChange={(e) => setTextInput(e.target.value)}
-                placeholder={
-                  activeTool === 'fact-check' 
-                  ? "Paste text here to verify claims against trusted sources..." 
-                  : "Paste text here to analyze for persuasive language and propaganda techniques..."
-                }
-                className="w-full h-48 bg-[var(--bg)] border border-[var(--border)] rounded-lg p-4 text-[var(--text)] placeholder:text-[var(--muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] transition-all resize-none"
-              />
-              <div className="absolute bottom-4 right-4 text-xs text-[var(--muted)]">
-                {textInput.length} chars
-              </div>
-            </div>
-            <div className="flex justify-end">
-              <button 
-                onClick={handleTextAnalyze}
-                disabled={!textInput.trim() || isAnalyzing}
-                className="btn btn-primary min-w-[150px]"
-              >
-                {isAnalyzing ? "Processing..." : "Analyze Text"}
-              </button>
-            </div>
-          </div>
-        );
-        
-      default:
-        return null;
-    }
+    return (
+      <div 
+        className="file-drop-area group"
+        onClick={() => fileInputRef.current?.click()}
+      >
+        <input 
+          type="file" 
+          className="hidden" 
+          ref={fileInputRef} 
+          onChange={handleFileSelect}
+        />
+        <div className="w-16 h-16 rounded-full bg-[var(--accent)]/10 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+          <UploadCloud className="w-8 h-8 text-[var(--accent)]" />
+        </div>
+        <h3 className="text-xl font-semibold mb-2 text-[var(--text)]">
+          Drop files here or click to upload
+        </h3>
+        <p className="text-[var(--muted)] text-sm max-w-md mx-auto">
+          Support for PDF, DOCX, JPG, PNG. Maximum file size 50MB.
+          {activeTool === 'metadata' && " Extracts EXIF, XMP, and IPTC data."}
+          {activeTool === 'geo' && " Analyzes visual landmarks for geolocation."}
+          {activeTool === 'fact-check' && " Upload an article/document to verify claims."}
+          {activeTool === 'propaganda' && " Upload content to assess propaganda likelihood."}
+        </p>
+        <button className="btn btn-secondary mt-6">
+          Select Files
+        </button>
+      </div>
+    );
   };
 
   const getToolInfo = () => {
