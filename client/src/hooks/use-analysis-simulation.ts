@@ -254,7 +254,7 @@ export function useAnalysisSimulation() {
     return newResult;
   }, []);
 
-  const updateDecision = useCallback((id: number, decision: "APPROVE" | "REJECT") => {
+  const updateDecision = useCallback((id: number, decision: "APPROVE" | "REJECT" | "MANUAL_REVIEW") => {
     setResults(prev => prev.map(r => {
       if (r.id === id && r.decision !== decision) {
         // Adjust stats if changing decision
@@ -268,6 +268,7 @@ export function useAnalysisSimulation() {
           // Increment new category
           if (decision === "APPROVE") newStats.approved++;
           else if (decision === "REJECT") newStats.rejected++;
+          else if (decision === "MANUAL_REVIEW") newStats.manual++;
           
           return newStats;
         });

@@ -19,10 +19,15 @@ interface ResultRowProps {
   result: AnalysisResult;
   onApprove: (id: number) => void;
   onReject: (id: number) => void;
+  onManualReview: (id: number) => void;
 }
 
-export function ResultRow({ result, onApprove, onReject }: ResultRowProps) {
+export function ResultRow({ result, onApprove, onReject, onManualReview }: ResultRowProps) {
   const [expanded, setExpanded] = React.useState(false);
+  
+  // Risk level: LOW (<40), MEDIUM (40-69), CRITICAL (>=70)
+  const riskLevel = result.riskScore >= 70 ? 'CRITICAL' : result.riskScore >= 40 ? 'MEDIUM' : 'LOW';
+  const isMediumRisk = riskLevel === 'MEDIUM';
 
   const getIcon = () => {
     if (result.previewUrl) {
@@ -245,21 +250,75 @@ export function ResultRow({ result, onApprove, onReject }: ResultRowProps) {
                    </p>
                 </div>
 
-                <div className="flex gap-4">
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); onApprove(result.id); }}
-                    className="flex-1 btn btn-secondary h-11 border-[var(--ok)]/30 hover:bg-[var(--ok)]/10 hover:text-[var(--ok)] font-bold tracking-wide uppercase active:scale-[0.98] transition-transform duration-150"
-                  >
-                    <Check className="w-4 h-4" />
-                    Approve
-                  </button>
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); onReject(result.id); }}
-                    className="flex-1 btn btn-secondary h-11 border-[var(--danger)]/30 hover:bg-[var(--danger)]/10 hover:text-[var(--danger)] font-bold tracking-wide uppercase active:scale-[0.98] transition-transform duration-150"
-                  >
-                    <X className="w-4 h-4" />
-                    Reject
-                  </button>
+                <div className="flex gap-3">
+                  {riskLevel === 'LOW' && (
+                    <>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); onApprove(result.id); }}
+                        className="flex-1 btn h-11 bg-[var(--ok)]/15 border-[var(--ok)]/30 text-[var(--ok)] hover:bg-[var(--ok)]/25 font-bold tracking-wide uppercase active:scale-[0.98] transition-all duration-150"
+                        data-testid="button-approve"
+                      >
+                        <Check className="w-4 h-4" />
+                        Approve
+                      </button>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); onReject(result.id); }}
+                        className="flex-1 btn btn-secondary h-11 border-[var(--danger)]/30 hover:bg-[var(--danger)]/10 hover:text-[var(--danger)] font-bold tracking-wide uppercase active:scale-[0.98] transition-all duration-150"
+                        data-testid="button-reject"
+                      >
+                        <X className="w-4 h-4" />
+                        Reject
+                      </button>
+                    </>
+                  )}
+                  {riskLevel === 'CRITICAL' && (
+                    <>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); onReject(result.id); }}
+                        className="flex-1 btn h-11 bg-[var(--danger)]/15 border-[var(--danger)]/30 text-[var(--danger)] hover:bg-[var(--danger)]/25 font-bold tracking-wide uppercase active:scale-[0.98] transition-all duration-150"
+                        data-testid="button-reject"
+                      >
+                        <X className="w-4 h-4" />
+                        Reject
+                      </button>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); onApprove(result.id); }}
+                        className="flex-1 btn btn-secondary h-11 border-[var(--ok)]/30 hover:bg-[var(--ok)]/10 hover:text-[var(--ok)] font-bold tracking-wide uppercase active:scale-[0.98] transition-all duration-150"
+                        data-testid="button-approve"
+                      >
+                        <Check className="w-4 h-4" />
+                        Approve
+                      </button>
+                    </>
+                  )}
+                  {isMediumRisk && (
+                    <>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); onManualReview(result.id); }}
+                        className="flex-1 btn h-11 bg-[var(--grad-orange-start)]/15 border-[var(--grad-orange-start)]/30 text-[var(--grad-orange-start)] hover:bg-[var(--grad-orange-start)]/25 font-bold tracking-wide uppercase active:scale-[0.98] transition-all duration-150"
+                        data-testid="button-manual-review"
+                      >
+                        <AlertCircle className="w-4 h-4" />
+                        Manual Review
+                      </button>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); onApprove(result.id); }}
+                        className="flex-1 btn btn-secondary h-11 border-[var(--ok)]/30 hover:bg-[var(--ok)]/10 hover:text-[var(--ok)] font-bold tracking-wide uppercase active:scale-[0.98] transition-all duration-150"
+                        data-testid="button-approve"
+                      >
+                        <Check className="w-4 h-4" />
+                        Approve
+                      </button>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); onReject(result.id); }}
+                        className="flex-1 btn btn-secondary h-11 border-[var(--danger)]/30 hover:bg-[var(--danger)]/10 hover:text-[var(--danger)] font-bold tracking-wide uppercase active:scale-[0.98] transition-all duration-150"
+                        data-testid="button-reject"
+                      >
+                        <X className="w-4 h-4" />
+                        Reject
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

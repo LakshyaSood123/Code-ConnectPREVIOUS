@@ -175,6 +175,7 @@ export default function Home() {
                     result={result}
                     onApprove={(id) => updateDecision(id, 'APPROVE')}
                     onReject={(id) => updateDecision(id, 'REJECT')}
+                    onManualReview={(id) => updateDecision(id, 'MANUAL_REVIEW')}
                   />
                 ))
               )}
