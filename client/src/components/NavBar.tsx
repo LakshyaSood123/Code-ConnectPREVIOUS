@@ -5,11 +5,12 @@ export function NavBar() {
   return (
     <nav className="h-16 border-b border-border bg-panel sticky top-0 z-50 backdrop-blur-md bg-opacity-80">
       <div className="container mx-auto px-4 h-full flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <img src="/brand-logo.png" alt="Reagvis Labs Pvt. Ltd." className="h-10 w-auto" />
-          <span className="font-display font-bold text-xl tracking-tight text-[var(--text)]">
-            Reagvis Labs Pvt. Ltd.
-          </span>
+        <div className="flex items-center">
+          <img 
+            src="/brand-logo.png" 
+            alt="Reagvis Labs Pvt. Ltd." 
+            className="h-[34px] md:h-[40px] max-w-[280px] object-contain block" 
+          />
         </div>
 
         <div className="flex items-center gap-4">
