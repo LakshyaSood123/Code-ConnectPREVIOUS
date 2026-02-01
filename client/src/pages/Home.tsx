@@ -47,7 +47,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-[#101113] pb-20 font-sans">
+    <div className="min-h-screen bg-[var(--bg)] pb-20 font-sans">
       <NavBar />
       
       <main className="container mx-auto px-4 pt-8">
@@ -60,7 +60,7 @@ export default function Home() {
           >
             <div>
               <h1 className="heading-1 mb-2">Advanced Verification</h1>
-              <p className="text-xl text-gray-400 max-w-2xl">
+              <p className="text-xl text-[var(--muted)] max-w-2xl">
                 Analyze digital assets using AI-driven forensics, semantic analysis, and metadata verification.
               </p>
             </div>
@@ -86,7 +86,7 @@ export default function Home() {
         </motion.div>
 
         {/* Tool Tabs */}
-        <div className="flex flex-wrap gap-2 mb-6 border-b border-white/10 pb-1">
+        <div className="flex flex-wrap gap-2 mb-6 border-b border-[var(--border)] pb-1">
           {TABS.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTool === tab.id;
@@ -97,14 +97,14 @@ export default function Home() {
                 className={cn(
                   "flex items-center gap-2 px-4 py-3 rounded-t-lg font-medium text-sm transition-all relative top-[1px]",
                   isActive 
-                    ? "text-brand-primary bg-panel border-x border-t border-border" 
-                    : "text-gray-400 hover:text-white hover:bg-white/5"
+                    ? "text-[var(--accent)] bg-[var(--panel)] border-x border-t border-[var(--border)]" 
+                    : "text-[var(--muted)] hover:text-[var(--text)] hover:bg-white/5"
                 )}
               >
-                <Icon className={cn("w-4 h-4", isActive ? "text-brand-primary" : "text-gray-500")} />
+                <Icon className={cn("w-4 h-4", isActive ? "text-[var(--accent)]" : "text-[var(--muted)]")} />
                 {tab.label}
                 {isActive && (
-                  <div className="absolute top-0 left-0 w-full h-[2px] bg-brand-primary rounded-t-lg" />
+                  <div className="absolute top-0 left-0 w-full h-[2px] bg-[var(--accent)] rounded-t-lg" />
                 )}
               </button>
             );
@@ -129,7 +129,7 @@ export default function Home() {
         <div className="mt-12">
           <div className="flex items-center justify-between mb-6">
             <h2 className="heading-2">Recent Analysis</h2>
-            <span className="text-sm text-gray-500">
+            <span className="text-sm text-[var(--muted)]">
               Showing {results.length} results
             </span>
           </div>
@@ -140,13 +140,13 @@ export default function Home() {
                 <motion.div 
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="text-center py-20 border border-dashed border-gray-800 rounded-xl bg-panel2/30"
+                  className="text-center py-20 border border-dashed border-[var(--border)] rounded-xl bg-[var(--panel2)]"
                 >
-                  <div className="w-16 h-16 rounded-full bg-gray-800 flex items-center justify-center mx-auto mb-4">
-                    <Search className="w-8 h-8 text-gray-600" />
+                  <div className="w-16 h-16 rounded-full bg-[var(--border)] flex items-center justify-center mx-auto mb-4">
+                    <Search className="w-8 h-8 text-[var(--muted)]" />
                   </div>
-                  <h3 className="text-lg font-medium text-white mb-1">No analysis yet</h3>
-                  <p className="text-gray-500">Upload a file or paste text to begin verification.</p>
+                  <h3 className="text-lg font-medium text-[var(--text)] mb-1">No analysis yet</h3>
+                  <p className="text-[var(--muted)]">Upload a file or paste text to begin verification.</p>
                 </motion.div>
               ) : (
                 results.map((result) => (
@@ -170,14 +170,14 @@ export default function Home() {
             initial={{ opacity: 0, y: 50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className="fixed bottom-8 right-8 z-50 bg-panel border border-border shadow-2xl rounded-lg p-4 flex items-center gap-3 pr-6"
+            className="fixed bottom-8 right-8 z-50 bg-[var(--panel)] border border-[var(--border)] shadow-2xl rounded-lg p-4 flex items-center gap-3 pr-6"
           >
             {isAnalyzing ? (
-               <Loader2 className="w-5 h-5 text-brand-primary animate-spin" />
+               <Loader2 className="w-5 h-5 text-[var(--accent)] animate-spin" />
             ) : (
-               <div className="w-2 h-2 rounded-full bg-green-500" />
+               <div className="w-2 h-2 rounded-full bg-[var(--ok)]" />
             )}
-            <span className="font-medium text-white text-sm">{toastMessage}</span>
+            <span className="font-medium text-[var(--text)] text-sm">{toastMessage}</span>
           </motion.div>
         )}
       </AnimatePresence>

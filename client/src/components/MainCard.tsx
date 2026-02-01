@@ -43,13 +43,13 @@ export function MainCard({ activeTool, onAnalyze, isAnalyzing }: MainCardProps) 
               ref={fileInputRef} 
               onChange={handleFileSelect}
             />
-            <div className="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-              <UploadCloud className="w-8 h-8 text-brand-primary" />
+            <div className="w-16 h-16 rounded-full bg-[var(--accent)]/10 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+              <UploadCloud className="w-8 h-8 text-[var(--accent)]" />
             </div>
-            <h3 className="text-xl font-semibold mb-2 text-white">
+            <h3 className="text-xl font-semibold mb-2 text-[var(--text)]">
               Drop files here or click to upload
             </h3>
-            <p className="text-gray-400 text-sm max-w-md mx-auto">
+            <p className="text-[var(--muted)] text-sm max-w-md mx-auto">
               Support for PDF, DOCX, JPG, PNG. Maximum file size 50MB.
               {activeTool === 'metadata' && " Extracts EXIF, XMP, and IPTC data."}
               {activeTool === 'geo' && " Analyzes visual landmarks for geolocation."}
@@ -73,9 +73,9 @@ export function MainCard({ activeTool, onAnalyze, isAnalyzing }: MainCardProps) 
                   ? "Paste text here to verify claims against trusted sources..." 
                   : "Paste text here to analyze for persuasive language and propaganda techniques..."
                 }
-                className="w-full h-48 bg-black/20 border border-white/10 rounded-lg p-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all resize-none"
+                className="w-full h-48 bg-[var(--bg)] border border-[var(--border)] rounded-lg p-4 text-[var(--text)] placeholder:text-[var(--muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] transition-all resize-none"
               />
-              <div className="absolute bottom-4 right-4 text-xs text-gray-500">
+              <div className="absolute bottom-4 right-4 text-xs text-[var(--muted)]">
                 {textInput.length} chars
               </div>
             </div>
@@ -111,14 +111,14 @@ export function MainCard({ activeTool, onAnalyze, isAnalyzing }: MainCardProps) 
 
   return (
     <div className="card p-1 md:p-2 mb-8">
-      <div className="bg-panel2/50 rounded-lg p-6 md:p-8">
+      <div className="bg-[var(--panel2)]/50 rounded-lg p-6 md:p-8">
         <div className="flex items-start gap-4 mb-8">
-          <div className="p-3 bg-brand-primary/10 rounded-xl">
-            <Icon className="w-8 h-8 text-brand-primary" />
+          <div className="p-3 bg-[var(--accent)]/10 rounded-xl">
+            <Icon className="w-8 h-8 text-[var(--accent)]" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-white mb-1">{info.title}</h2>
-            <p className="text-gray-400">{info.desc}</p>
+            <h2 className="text-2xl font-bold text-[var(--text)] mb-1">{info.title}</h2>
+            <p className="text-[var(--muted)]">{info.desc}</p>
           </div>
         </div>
         

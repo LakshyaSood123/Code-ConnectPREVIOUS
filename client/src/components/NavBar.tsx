@@ -9,30 +9,30 @@ export function NavBar() {
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
             <ShieldCheck className="w-5 h-5 text-white" />
           </div>
-          <span className="font-display font-bold text-xl tracking-tight text-white">
-            Verifi<span className="text-blue-400">Suite</span>
+          <span className="font-display font-bold text-xl tracking-tight text-[var(--text)]">
+            Verifi<span className="text-[var(--accent)]">Suite</span>
           </span>
           <div className="hidden md:flex ml-4 pill pill-online gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--ok)] animate-pulse" />
             System Online
           </div>
         </div>
 
         <div className="flex items-center gap-4">
           <button className="relative btn btn-ghost p-2 rounded-full hover:bg-white/5 transition-colors">
-            <Bell className="w-5 h-5 text-gray-400" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-panel" />
+            <Bell className="w-5 h-5 text-[var(--muted)]" />
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[var(--danger)] rounded-full border border-panel" />
           </button>
           
           <div className="h-8 w-[1px] bg-border mx-1" />
           
           <div className="flex items-center gap-3 pl-2">
             <div className="text-right hidden sm:block">
-              <p className="text-sm font-medium text-white">Alex Morgan</p>
-              <p className="text-xs text-gray-500">Lead Analyst</p>
+              <p className="text-sm font-medium text-[var(--text)]">Alex Morgan</p>
+              <p className="text-xs text-[var(--muted)]">Lead Analyst</p>
             </div>
-            <div className="w-9 h-9 rounded-full bg-gray-700 border border-gray-600 flex items-center justify-center">
-              <User className="w-5 h-5 text-gray-400" />
+            <div className="w-9 h-9 rounded-full bg-[var(--panel2)] border border-[var(--border)] flex items-center justify-center">
+              <User className="w-5 h-5 text-[var(--muted)]" />
             </div>
           </div>
         </div>
