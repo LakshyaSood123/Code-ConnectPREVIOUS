@@ -47,27 +47,42 @@ export function MainCard({ activeTool, onAnalyze, isAnalyzing }: MainCardProps) 
             ref={fileInputRef} 
             onChange={handleFileSelect}
           />
-          <div className={`upload-icon-wrapper rounded-full bg-[var(--accent)]/10 flex items-center justify-center mx-auto group-hover:scale-110 transition-transform duration-300 ${activeTool === 'fact-check' ? 'w-6 h-6 mb-1.5' : 'w-16 h-16 mb-4'}`}>
-            <UploadCloud className={`text-[var(--accent)] ${activeTool === 'fact-check' ? 'w-3 h-3' : 'w-8 h-8'}`} />
-          </div>
-          <h3 className={`font-semibold text-[var(--text)] ${activeTool === 'fact-check' ? 'text-xs mb-0.5' : 'text-xl mb-2'}`}>
-            {activeTool === 'fact-check' ? "Drop files or click to upload" : "Drop files here or click to upload"}
-          </h3>
-          <p className={`text-[var(--muted)] max-w-md mx-auto ${activeTool === 'fact-check' ? 'text-[10px] leading-tight' : 'text-sm leading-relaxed'}`}>
-            {activeTool === 'fact-check' ? "PDF, DOCX, JPG, PNG • Max 50MB" : "Support for PDF, DOCX, JPG, PNG. Maximum file size 50MB."}
-            {activeTool === 'verification' && " Analyzes metadata and geolocation landmarks."}
-            {activeTool === 'propaganda' && " Upload content to assess propaganda likelihood."}
-          </p>
-          {activeTool !== 'fact-check' && (
-            <p className="mt-4 text-[10px] text-[var(--muted)] font-medium uppercase tracking-widest opacity-60">
-              {activeTool === 'verification' 
-                ? "Tip: Use demo filenames like quake_turkey_32001.jpg, flood_kanchipuram_33001.jpg, eiffel_31001.jpg"
-                : "Tip: name files with _real or _fake for demo outputs"}
-            </p>
+          {activeTool === 'fact-check' ? (
+            <>
+              <div className="w-8 h-8 rounded-full bg-[var(--accent)]/10 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-300">
+                <UploadCloud className="w-4 h-4 text-[var(--accent)]" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <span className="text-xs font-medium text-[var(--text)]">Drop file or click</span>
+                <span className="text-[10px] text-[var(--muted)] ml-2">PDF, JPG, PNG</span>
+              </div>
+              <button className="btn btn-secondary hover-elevate active-elevate-2 px-3 py-1 text-[10px] shrink-0">
+                Select
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="upload-icon-wrapper w-16 h-16 rounded-full bg-[var(--accent)]/10 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                <UploadCloud className="w-8 h-8 text-[var(--accent)]" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2 text-[var(--text)]">
+                Drop files here or click to upload
+              </h3>
+              <p className="text-[var(--muted)] text-sm max-w-md mx-auto leading-relaxed">
+                Support for PDF, DOCX, JPG, PNG. Maximum file size 50MB.
+                {activeTool === 'verification' && " Analyzes metadata and geolocation landmarks."}
+                {activeTool === 'propaganda' && " Upload content to assess propaganda likelihood."}
+              </p>
+              <p className="mt-4 text-[10px] text-[var(--muted)] font-medium uppercase tracking-widest opacity-60">
+                {activeTool === 'verification' 
+                  ? "Tip: Use demo filenames like quake_turkey_32001.jpg, flood_kanchipuram_33001.jpg, eiffel_31001.jpg"
+                  : "Tip: name files with _real or _fake for demo outputs"}
+              </p>
+              <button className="btn btn-secondary mt-6 px-8 hover-elevate active-elevate-2">
+                Select Files
+              </button>
+            </>
           )}
-          <button className={`btn btn-secondary hover-elevate active-elevate-2 ${activeTool === 'fact-check' ? 'mt-1.5 px-3 py-0.5 text-[10px]' : 'mt-6 px-8'}`}>
-            Select Files
-          </button>
         </div>
 
         {activeTool === 'verification' && (

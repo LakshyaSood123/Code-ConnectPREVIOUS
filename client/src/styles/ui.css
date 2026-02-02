@@ -171,7 +171,12 @@
 
 /* Compact dropzone variant for Fact Check */
 .file-drop-area.compact {
-  padding: 10px 16px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
 }
 
 .file-drop-area.compact .upload-icon-wrapper {
