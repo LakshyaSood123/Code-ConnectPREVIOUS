@@ -47,24 +47,26 @@ export function MainCard({ activeTool, onAnalyze, isAnalyzing }: MainCardProps) 
             ref={fileInputRef} 
             onChange={handleFileSelect}
           />
-          <div className={`upload-icon-wrapper rounded-full bg-[var(--accent)]/10 flex items-center justify-center mx-auto group-hover:scale-110 transition-transform duration-300 ${activeTool === 'fact-check' ? 'w-10 h-10 mb-3' : 'w-16 h-16 mb-4'}`}>
-            <UploadCloud className={`text-[var(--accent)] ${activeTool === 'fact-check' ? 'w-5 h-5' : 'w-8 h-8'}`} />
+          <div className={`upload-icon-wrapper rounded-full bg-[var(--accent)]/10 flex items-center justify-center mx-auto group-hover:scale-110 transition-transform duration-300 ${activeTool === 'fact-check' ? 'w-8 h-8 mb-2' : 'w-16 h-16 mb-4'}`}>
+            <UploadCloud className={`text-[var(--accent)] ${activeTool === 'fact-check' ? 'w-4 h-4' : 'w-8 h-8'}`} />
           </div>
-          <h3 className={`font-semibold text-[var(--text)] ${activeTool === 'fact-check' ? 'text-base mb-1' : 'text-xl mb-2'}`}>
+          <h3 className={`font-semibold text-[var(--text)] ${activeTool === 'fact-check' ? 'text-sm mb-0.5' : 'text-xl mb-2'}`}>
             Drop files here or click to upload
           </h3>
-          <p className={`text-[var(--muted)] max-w-md mx-auto leading-relaxed ${activeTool === 'fact-check' ? 'text-xs' : 'text-sm'}`}>
-            Support for PDF, DOCX, JPG, PNG. Maximum file size 50MB.
+          <p className={`text-[var(--muted)] max-w-md mx-auto leading-relaxed ${activeTool === 'fact-check' ? 'text-[11px]' : 'text-sm'}`}>
+            {activeTool === 'fact-check' ? "PDF, DOCX, JPG, PNG. Max 50MB." : "Support for PDF, DOCX, JPG, PNG. Maximum file size 50MB."}
             {activeTool === 'verification' && " Analyzes metadata and geolocation landmarks."}
-            {activeTool === 'fact-check' && " Upload an article/document to verify claims."}
+            {activeTool === 'fact-check' && " Upload to verify claims."}
             {activeTool === 'propaganda' && " Upload content to assess propaganda likelihood."}
           </p>
-          <p className={`text-[var(--muted)] font-medium uppercase tracking-widest opacity-60 ${activeTool === 'fact-check' ? 'mt-2 text-[9px]' : 'mt-4 text-[10px]'}`}>
-            {activeTool === 'verification' 
-              ? "Tip: Use demo filenames like quake_turkey_32001.jpg, flood_kanchipuram_33001.jpg, eiffel_31001.jpg"
-              : "Tip: name files with _real or _fake for demo outputs"}
-          </p>
-          <button className={`btn btn-secondary hover-elevate active-elevate-2 ${activeTool === 'fact-check' ? 'mt-3 px-6 text-xs' : 'mt-6 px-8'}`}>
+          {activeTool !== 'fact-check' && (
+            <p className="mt-4 text-[10px] text-[var(--muted)] font-medium uppercase tracking-widest opacity-60">
+              {activeTool === 'verification' 
+                ? "Tip: Use demo filenames like quake_turkey_32001.jpg, flood_kanchipuram_33001.jpg, eiffel_31001.jpg"
+                : "Tip: name files with _real or _fake for demo outputs"}
+            </p>
+          )}
+          <button className={`btn btn-secondary hover-elevate active-elevate-2 ${activeTool === 'fact-check' ? 'mt-2 px-4 py-1 text-[11px]' : 'mt-6 px-8'}`}>
             Select Files
           </button>
         </div>
