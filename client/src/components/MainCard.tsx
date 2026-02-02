@@ -38,7 +38,7 @@ export function MainCard({ activeTool, onAnalyze, isAnalyzing }: MainCardProps) 
     return (
       <div className="space-y-4">
         <div 
-          className="file-drop-area group bg-[var(--panel)] border-border hover:bg-[var(--panel2)]/50 hover:border-[var(--accent)] transition-all duration-300 shadow-[var(--shadow)] hover:shadow-[var(--shadow-strong)]"
+          className={`file-drop-area group bg-[var(--panel)] border-border hover:bg-[var(--panel2)]/50 hover:border-[var(--accent)] transition-all duration-300 shadow-[var(--shadow)] hover:shadow-[var(--shadow-strong)] ${activeTool === 'fact-check' ? 'compact' : ''}`}
           onClick={() => fileInputRef.current?.click()}
         >
           <input 
@@ -47,24 +47,24 @@ export function MainCard({ activeTool, onAnalyze, isAnalyzing }: MainCardProps) 
             ref={fileInputRef} 
             onChange={handleFileSelect}
           />
-          <div className="w-16 h-16 rounded-full bg-[var(--accent)]/10 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-            <UploadCloud className="w-8 h-8 text-[var(--accent)]" />
+          <div className={`upload-icon-wrapper rounded-full bg-[var(--accent)]/10 flex items-center justify-center mx-auto group-hover:scale-110 transition-transform duration-300 ${activeTool === 'fact-check' ? 'w-10 h-10 mb-3' : 'w-16 h-16 mb-4'}`}>
+            <UploadCloud className={`text-[var(--accent)] ${activeTool === 'fact-check' ? 'w-5 h-5' : 'w-8 h-8'}`} />
           </div>
-          <h3 className="text-xl font-semibold mb-2 text-[var(--text)]">
+          <h3 className={`font-semibold text-[var(--text)] ${activeTool === 'fact-check' ? 'text-base mb-1' : 'text-xl mb-2'}`}>
             Drop files here or click to upload
           </h3>
-          <p className="text-[var(--muted)] text-sm max-w-md mx-auto leading-relaxed">
+          <p className={`text-[var(--muted)] max-w-md mx-auto leading-relaxed ${activeTool === 'fact-check' ? 'text-xs' : 'text-sm'}`}>
             Support for PDF, DOCX, JPG, PNG. Maximum file size 50MB.
             {activeTool === 'verification' && " Analyzes metadata and geolocation landmarks."}
             {activeTool === 'fact-check' && " Upload an article/document to verify claims."}
             {activeTool === 'propaganda' && " Upload content to assess propaganda likelihood."}
           </p>
-          <p className="mt-4 text-[10px] text-[var(--muted)] font-medium uppercase tracking-widest opacity-60">
+          <p className={`text-[var(--muted)] font-medium uppercase tracking-widest opacity-60 ${activeTool === 'fact-check' ? 'mt-2 text-[9px]' : 'mt-4 text-[10px]'}`}>
             {activeTool === 'verification' 
               ? "Tip: Use demo filenames like quake_turkey_32001.jpg, flood_kanchipuram_33001.jpg, eiffel_31001.jpg"
               : "Tip: name files with _real or _fake for demo outputs"}
           </p>
-          <button className="btn btn-secondary mt-6 px-8 hover-elevate active-elevate-2">
+          <button className={`btn btn-secondary hover-elevate active-elevate-2 ${activeTool === 'fact-check' ? 'mt-3 px-6 text-xs' : 'mt-6 px-8'}`}>
             Select Files
           </button>
         </div>
