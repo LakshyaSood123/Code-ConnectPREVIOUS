@@ -1,5 +1,5 @@
-import React, { useState, useRef, useCallback } from 'react';
-import { UploadCloud, X, ZoomIn, Check, AlertTriangle, ChevronDown } from 'lucide-react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { UploadCloud, X, ZoomIn, Check, AlertTriangle, ChevronDown, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -203,14 +203,25 @@ interface DocumentVerificationProps {
 export function DocumentVerification({ onResultsChange, onSlotAnalyzed }: DocumentVerificationProps) {
   const [selectedDocType, setSelectedDocType] = useState<DocTypeKey>("Marriage Certificate");
   const [slots, setSlots] = useState<Map<string, SlotResult>>(new Map());
+  const [processingSlots, setProcessingSlots] = useState<Map<string, { fileName: string; previewUrl: string | null }>>(new Map());
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [hoveredSlot, setHoveredSlot] = useState<string | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const timerRefs = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   const currentDocs = DOC_TYPES[selectedDocType];
 
+  useEffect(() => {
+    return () => {
+      timerRefs.current.forEach(t => clearTimeout(t));
+    };
+  }, []);
+
   const handleDocTypeChange = useCallback((docType: DocTypeKey) => {
+    timerRefs.current.forEach(t => clearTimeout(t));
+    timerRefs.current.clear();
+    setProcessingSlots(new Map());
     setSelectedDocType(docType);
     setSlots(new Map());
     setIsDropdownOpen(false);
@@ -218,35 +229,63 @@ export function DocumentVerification({ onResultsChange, onSlotAnalyzed }: Docume
   }, [onResultsChange]);
 
   const handleSlotUpload = useCallback((doc: RequiredDoc, file: File) => {
+    const existingTimer = timerRefs.current.get(doc.id);
+    if (existingTimer) clearTimeout(existingTimer);
+
     let previewUrl: string | null = null;
     if (file.type.startsWith('image/')) {
       previewUrl = URL.createObjectURL(file);
     }
 
-    const evaluation = evaluateSlot(doc, file.name);
-    const slotResult: SlotResult = { ...evaluation, file, previewUrl };
+    setProcessingSlots(prev => {
+      const next = new Map(prev);
+      next.set(doc.id, { fileName: file.name, previewUrl });
+      return next;
+    });
 
     setSlots(prev => {
       const next = new Map(prev);
       const old = prev.get(doc.id);
       if (old?.previewUrl) URL.revokeObjectURL(old.previewUrl);
-      next.set(doc.id, slotResult);
-
-      const allSlots = currentDocs.map(d => next.get(d.id) || {
-        id: d.id, label: d.label, expected: d.expected, required: d.required,
-        fileName: null, file: null, previewUrl: null, riskScore: 0, riskLevel: "LOW" as const,
-        decision: null, checks: [], mismatchReason: null, mismatchReceivedLabel: null, authenticityStatus: "unknown" as const
-      });
-      const summary = computeSummary(allSlots, currentDocs);
-      onResultsChange?.({ selectedDocumentType: selectedDocType, requiredItems: allSlots, overallSummary: summary });
-
+      next.delete(doc.id);
       return next;
     });
 
-    onSlotAnalyzed?.(slotResult);
+    const delay = 900 + Math.random() * 1300;
+    const timerId = setTimeout(() => {
+      timerRefs.current.delete(doc.id);
+
+      const evaluation = evaluateSlot(doc, file.name);
+      const slotResult: SlotResult = { ...evaluation, file, previewUrl };
+
+      setProcessingSlots(prev => {
+        const next = new Map(prev);
+        next.delete(doc.id);
+        return next;
+      });
+
+      setSlots(prev => {
+        const next = new Map(prev);
+        next.set(doc.id, slotResult);
+
+        const allSlots = currentDocs.map(d => next.get(d.id) || {
+          id: d.id, label: d.label, expected: d.expected, required: d.required,
+          fileName: null, file: null, previewUrl: null, riskScore: 0, riskLevel: "LOW" as const,
+          decision: null, checks: [], mismatchReason: null, mismatchReceivedLabel: null, authenticityStatus: "unknown" as const
+        });
+        const summary = computeSummary(allSlots, currentDocs);
+        onResultsChange?.({ selectedDocumentType: selectedDocType, requiredItems: allSlots, overallSummary: summary });
+
+        return next;
+      });
+
+      onSlotAnalyzed?.(slotResult);
+    }, delay);
+
+    timerRefs.current.set(doc.id, timerId);
   }, [currentDocs, selectedDocType, onResultsChange, onSlotAnalyzed]);
 
-  const uploadedCount = Array.from(slots.values()).filter(s => s.fileName).length;
+  const uploadedCount = Array.from(slots.values()).filter(s => s.fileName).length + processingSlots.size;
   const allSlots = currentDocs.map(d => slots.get(d.id) || null);
   const uploadedSlots = allSlots.filter(Boolean) as SlotResult[];
   const summary = uploadedSlots.length > 0 ? computeSummary(
@@ -315,36 +354,53 @@ export function DocumentVerification({ onResultsChange, onSlotAnalyzed }: Docume
         <div className="grid gap-3">
           {currentDocs.map((doc) => {
             const slotData = slots.get(doc.id);
+            const processingData = processingSlots.get(doc.id);
+            const isProcessing = !!processingData;
             const isUploaded = !!slotData?.fileName;
 
             return (
               <div
                 key={doc.id}
                 className="relative bg-[var(--panel)] border border-[var(--border)] rounded-[var(--radius)] p-3 transition-all hover:border-[var(--accent)]/50 hover:shadow-[var(--shadow)]"
-                onMouseEnter={() => isUploaded ? setHoveredSlot(doc.id) : undefined}
+                onMouseEnter={() => isUploaded && !isProcessing ? setHoveredSlot(doc.id) : undefined}
                 onMouseLeave={() => setHoveredSlot(null)}
                 data-testid={`slot-${doc.id}`}
               >
                 <div className="flex items-center gap-3">
-                  {isUploaded && slotData?.previewUrl ? (
-                    <div
-                      className="relative w-[96px] h-[96px] rounded-md overflow-hidden border border-[var(--border)] shrink-0 cursor-pointer group/thumb"
-                      onClick={() => setLightboxUrl(slotData.previewUrl)}
-                    >
-                      <img
-                        src={slotData.previewUrl}
-                        alt={doc.label}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center">
-                        <ZoomIn className="w-5 h-5 text-white" />
+                  {(() => {
+                    const thumbUrl = isProcessing ? processingData?.previewUrl : slotData?.previewUrl;
+                    if (!isUploaded && !isProcessing) return null;
+                    if (thumbUrl) return (
+                      <div
+                        className={cn(
+                          "relative w-[96px] h-[96px] rounded-md overflow-hidden border border-[var(--border)] shrink-0",
+                          isProcessing ? "opacity-60" : "cursor-pointer group/thumb"
+                        )}
+                        onClick={() => !isProcessing && setLightboxUrl(thumbUrl)}
+                      >
+                        <img src={thumbUrl} alt={doc.label} className="w-full h-full object-cover" />
+                        {!isProcessing && (
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center">
+                            <ZoomIn className="w-5 h-5 text-white" />
+                          </div>
+                        )}
+                        {isProcessing && (
+                          <div className="absolute inset-0 bg-[var(--panel)]/60 flex items-center justify-center">
+                            <Loader2 className="w-5 h-5 text-[var(--accent)] animate-spin" />
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  ) : isUploaded ? (
-                    <div className="w-[96px] h-[96px] rounded-md bg-[var(--panel2)] border border-[var(--border)] shrink-0 flex items-center justify-center">
-                      <span className="text-[10px] text-[var(--muted)] text-center px-1">No preview</span>
-                    </div>
-                  ) : null}
+                    );
+                    return (
+                      <div className="w-[96px] h-[96px] rounded-md bg-[var(--panel2)] border border-[var(--border)] shrink-0 flex items-center justify-center">
+                        {isProcessing ? (
+                          <Loader2 className="w-5 h-5 text-[var(--accent)] animate-spin" />
+                        ) : (
+                          <span className="text-[10px] text-[var(--muted)] text-center px-1">No preview</span>
+                        )}
+                      </div>
+                    );
+                  })()}
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -359,7 +415,19 @@ export function DocumentVerification({ onResultsChange, onSlotAnalyzed }: Docume
                       </span>
                     </div>
 
-                    {isUploaded && slotData ? (
+                    {isProcessing ? (
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="w-3.5 h-3.5 text-[var(--accent)] animate-spin shrink-0" />
+                          <span className="text-[11px] font-medium text-[var(--accent)]">Analyzing...</span>
+                        </div>
+                        <p className="text-[10px] text-[var(--muted)]">Checking authenticity, format, and document match</p>
+                        <div className="h-1.5 rounded-full bg-[var(--panel2)] overflow-hidden">
+                          <div className="h-full rounded-full bg-[var(--accent)]/40 animate-shimmer" />
+                        </div>
+                        <p className="text-[10px] text-[var(--muted)]/60 truncate">{processingData.fileName}</p>
+                      </div>
+                    ) : isUploaded && slotData ? (
                       <div className="space-y-1.5">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className={cn(
@@ -406,20 +474,20 @@ export function DocumentVerification({ onResultsChange, onSlotAnalyzed }: Docume
                       onClick={() => fileInputRefs.current[doc.id]?.click()}
                       className={cn(
                         "btn text-[10px] px-3 py-1.5 font-medium tracking-wide uppercase transition-all",
-                        isUploaded
+                        isUploaded || isProcessing
                           ? "btn-secondary hover-elevate active-elevate-2"
                           : "bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/30 hover:bg-[var(--accent)]/20"
                       )}
                       data-testid={`button-upload-${doc.id}`}
                     >
                       <UploadCloud className="w-3 h-3" />
-                      {isUploaded ? "Replace" : "Upload"}
+                      {isUploaded || isProcessing ? "Replace" : "Upload"}
                     </button>
                   </div>
                 </div>
 
                 <AnimatePresence>
-                  {hoveredSlot === doc.id && isUploaded && slotData && (
+                  {hoveredSlot === doc.id && isUploaded && !isProcessing && slotData && (
                     <motion.div
                       initial={{ opacity: 0, y: 4 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -469,7 +537,7 @@ export function DocumentVerification({ onResultsChange, onSlotAnalyzed }: Docume
         </div>
       </div>
 
-      {summary && uploadedSlots.length > 0 && (() => {
+      {summary && uploadedSlots.length > 0 && processingSlots.size === 0 && (() => {
         const statusColor = summary.status === "VERIFIED" ? "var(--ok)" : summary.status === "FAILED" ? "var(--danger)" : "var(--grad-orange-start)";
         const statusTitle = summary.status === "VERIFIED" ? "Verified" : summary.status === "FAILED" ? "Verification Failed" : "Needs Manual Review";
         const statusSubtitle = summary.status === "VERIFIED" ? "All checks passed successfully" : summary.status === "FAILED" ? "One or more checks did not pass" : "Action required before approval";

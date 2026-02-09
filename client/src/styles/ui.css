@@ -204,3 +204,13 @@
   padding: 6px 16px;
   font-size: 0.75rem;
 }
+
+@keyframes shimmer {
+  0% { width: 0%; }
+  50% { width: 80%; }
+  100% { width: 40%; }
+}
+
+.animate-shimmer {
+  animation: shimmer 1.8s ease-in-out infinite;
+}
