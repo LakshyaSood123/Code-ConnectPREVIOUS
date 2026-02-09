@@ -50,8 +50,7 @@ export type DocumentVerificationData = {
 const DOC_TYPES: Record<DocTypeKey, RequiredDoc[]> = {
   "Marriage Certificate": [
     { id: "bride_aadhaar", label: "Aadhaar card of bride", expected: "aadhaar", required: true },
-    { id: "groom_aadhaar", label: "Aadhaar card of groom", expected: "aadhaar", required: true },
-    { id: "marriage_cert", label: "Marriage certificate scan", expected: "marriage", required: false }
+    { id: "groom_aadhaar", label: "Aadhaar card of groom", expected: "aadhaar", required: true }
   ],
   "Birth Certificate": [
     { id: "child_birth", label: "Birth certificate", expected: "birth", required: true },
