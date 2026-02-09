@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { UploadCloud, X, ZoomIn, Check, AlertTriangle, Info, ChevronDown } from 'lucide-react';
+import { UploadCloud, X, ZoomIn, Check, AlertTriangle, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -127,11 +127,11 @@ function evaluateSlot(doc: RequiredDoc, fileName: string): Omit<SlotResult, 'fil
   }
 
   const checks: CheckItem[] = [
-    { name: "Format valid", pass: true, note: "File format accepted" },
-    { name: "Required document present", pass: true, note: "Document uploaded" },
-    { name: "Document type match", pass: !mismatchFail, note: mismatchFail ? (mismatchReason || "Mismatch") : "Matches expected type" },
-    { name: "Authenticity check", pass: authenticityStatus === "pass", note: isFake ? "Detected as fake" : isReal ? "Appears authentic" : "Cannot confirm" },
-    { name: "Tamper check", pass: !isFake, note: isFake ? "Tampering indicators found" : "No tampering detected" },
+    { name: "Valid format", pass: true, note: "File format accepted" },
+    { name: "Document provided", pass: true, note: "Uploaded successfully" },
+    { name: "Type matches request", pass: !mismatchFail, note: mismatchFail ? (mismatchReason || "Mismatch") : "Matches expected type" },
+    { name: "Authenticity verified", pass: authenticityStatus === "pass", note: isFake ? "Detected as fake" : isReal ? "Appears authentic" : "Cannot confirm" },
+    { name: "No tampering detected", pass: !isFake, note: isFake ? "Anomalies found" : "No anomalies found" },
   ];
 
   return {
@@ -425,23 +425,38 @@ export function DocumentVerification({ onResultsChange, onSlotAnalyzed }: Docume
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 4 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute left-0 right-0 top-full mt-1 z-30 bg-[var(--panel)] border border-[var(--border)] rounded-[var(--radius)] shadow-[var(--shadow-strong)] p-3"
+                      className="absolute left-0 right-0 top-full mt-1 z-30 bg-[var(--panel)] border border-[var(--border)] rounded-[var(--radius)] shadow-[var(--shadow-strong)] p-4"
                     >
-                      <h5 className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] mb-2 flex items-center gap-1">
-                        <Info className="w-3 h-3" /> Checks
+                      <h5 className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[var(--muted)] mb-3">
+                        Checks
                       </h5>
-                      <div className="space-y-1">
+                      <div className="grid gap-[10px]">
                         {slotData.checks.map((c, i) => (
-                          <div key={i} className="flex items-center gap-2 text-[11px]">
+                          <div
+                            key={i}
+                            className="flex items-center gap-2.5 h-[42px] px-3 bg-[var(--panel2)] border border-[var(--border)] rounded-[var(--radius)]"
+                          >
                             {c.pass ? (
-                              <Check className="w-3 h-3 text-[var(--ok)] shrink-0" />
+                              <Check className="w-3.5 h-3.5 text-[var(--ok)] shrink-0" />
                             ) : (
-                              <X className="w-3 h-3 text-[var(--danger)] shrink-0" />
+                              <X className="w-3.5 h-3.5 text-[var(--danger)] shrink-0" />
                             )}
-                            <span className={cn("font-medium", c.pass ? "text-[var(--ok)]" : "text-[var(--danger)]")}>
+                            <span className="text-[14px] font-semibold text-[var(--text)] shrink-0">
                               {c.name}
                             </span>
-                            <span className="text-[var(--muted)] ml-auto text-[10px]">{c.note}</span>
+                            <span
+                              className={cn(
+                                "text-[11px] font-semibold px-2 py-0.5 rounded-full border shrink-0",
+                                c.pass
+                                  ? "text-[var(--ok)] bg-[var(--ok)]/10 border-[var(--ok)]/25"
+                                  : "text-[var(--danger)] bg-[var(--danger)]/10 border-[var(--danger)]/25"
+                              )}
+                            >
+                              {c.pass ? "PASS" : "FAIL"}
+                            </span>
+                            <span className="text-[12px] text-[var(--muted)] ml-auto truncate">
+                              {c.note}
+                            </span>
                           </div>
                         ))}
                       </div>
