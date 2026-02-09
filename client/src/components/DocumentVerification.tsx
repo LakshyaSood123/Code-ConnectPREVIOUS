@@ -62,7 +62,7 @@ const DOC_TYPES: Record<DocTypeKey, RequiredDoc[]> = {
   ],
   "PAN Verification": [
     { id: "pan", label: "PAN card", expected: "pan", required: true },
-    { id: "aadhaar", label: "Aadhaar card", expected: "aadhaar", required: false }
+    { id: "aadhaar", label: "Aadhaar card", expected: "aadhaar", required: true }
   ]
 };
 
