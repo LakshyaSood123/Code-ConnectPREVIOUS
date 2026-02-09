@@ -469,53 +469,82 @@ export function DocumentVerification({ onResultsChange, onSlotAnalyzed }: Docume
         </div>
       </div>
 
-      {summary && uploadedSlots.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={cn(
-            "p-4 rounded-[var(--radius)] border",
-            summary.status === "VERIFIED" ? "bg-[var(--ok)]/5 border-[var(--ok)]/30" :
-            summary.status === "FAILED" ? "bg-[var(--danger)]/5 border-[var(--danger)]/30" :
-            "bg-[var(--grad-orange-start)]/5 border-[var(--grad-orange-start)]/30"
-          )}
-          data-testid="summary-card"
-        >
-          <div className="flex items-center gap-3 mb-3">
-            {summary.status === "VERIFIED" ? (
-              <Check className="w-5 h-5 text-[var(--ok)]" />
-            ) : summary.status === "FAILED" ? (
-              <X className="w-5 h-5 text-[var(--danger)]" />
-            ) : (
-              <AlertTriangle className="w-5 h-5 text-[var(--grad-orange-start)]" />
-            )}
-            <span className={cn(
-              "text-sm font-bold uppercase tracking-wide",
-              summary.status === "VERIFIED" ? "text-[var(--ok)]" :
-              summary.status === "FAILED" ? "text-[var(--danger)]" :
-              "text-[var(--grad-orange-start)]"
-            )}>
-              {summary.status}
-            </span>
-          </div>
+      {summary && uploadedSlots.length > 0 && (() => {
+        const statusColor = summary.status === "VERIFIED" ? "var(--ok)" : summary.status === "FAILED" ? "var(--danger)" : "var(--grad-orange-start)";
+        const statusTitle = summary.status === "VERIFIED" ? "Verified" : summary.status === "FAILED" ? "Verification Failed" : "Needs Manual Review";
+        const statusSubtitle = summary.status === "VERIFIED" ? "All checks passed successfully" : summary.status === "FAILED" ? "One or more checks did not pass" : "Action required before approval";
+        const StatusIcon = summary.status === "VERIFIED" ? Check : summary.status === "FAILED" ? X : AlertTriangle;
 
-          <p className="text-xs text-[var(--text)] mb-2">
-            <span className="font-medium">Authenticity:</span>{" "}
-            <span className="text-[var(--muted)]">{summary.authenticitySummary}</span>
-          </p>
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="relative bg-[var(--panel2)] border border-[var(--border)] rounded-[var(--radius)] shadow-[var(--shadow)] overflow-hidden"
+            data-testid="summary-card"
+          >
+            <div className="absolute left-0 top-0 bottom-0 w-1" style={{ background: statusColor }} />
 
-          {summary.notes.length > 0 && (
-            <div className="space-y-1 mt-2">
-              {summary.notes.map((note, i) => (
-                <p key={i} className="text-[11px] text-[var(--muted)] flex items-start gap-1.5">
-                  <span className="mt-1 w-1 h-1 rounded-full bg-[var(--muted)]/40 shrink-0" />
-                  {note}
-                </p>
-              ))}
+            <div className="pl-5 pr-4 py-3.5">
+              <div className="flex items-center gap-3 mb-3">
+                <div
+                  className="w-7 h-7 rounded-full bg-[var(--panel)] border border-[var(--border)] flex items-center justify-center shrink-0"
+                >
+                  <StatusIcon className="w-3.5 h-3.5" style={{ color: statusColor }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[15px] font-semibold text-[var(--text)] leading-tight">{statusTitle}</p>
+                  <p className="text-[12px] text-[var(--muted)] leading-tight mt-0.5">{statusSubtitle}</p>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2 text-[13px]">
+                  {summary.authenticitySummary.includes("fake") || summary.authenticitySummary.includes("failed") ? (
+                    <X className="w-3 h-3 text-[var(--danger)] shrink-0" />
+                  ) : summary.authenticitySummary.includes("real") || summary.authenticitySummary.includes("pass") ? (
+                    <Check className="w-3 h-3 text-[var(--ok)] shrink-0" />
+                  ) : (
+                    <AlertTriangle className="w-3 h-3 text-[var(--grad-orange-start)] shrink-0" />
+                  )}
+                  <span className="font-semibold text-[var(--text)]">Authenticity:</span>
+                  <span className="text-[var(--muted)]">{summary.authenticitySummary}</span>
+                </div>
+
+                {summary.notes.map((note, i) => {
+                  const isMissing = note.toLowerCase().includes("missing");
+                  const isMismatch = note.toLowerCase().includes("mismatch") || note.toLowerCase().includes("requested");
+                  const isFakeAuth = note.toLowerCase().includes("authenticity failed");
+                  let label = "Issue";
+                  let value = note;
+                  if (isMissing) {
+                    const match = note.match(/missing:\s*(.+?)\.?$/i);
+                    label = "Missing";
+                    value = match ? match[1] : note;
+                  } else if (isMismatch) {
+                    label = "Mismatch";
+                    value = note.replace(/—.*/, "").trim();
+                  } else if (isFakeAuth) {
+                    const match = note.match(/failed for:\s*(.+?)\.?$/i);
+                    label = "Authenticity";
+                    value = match ? `Failed for ${match[1]}` : note;
+                  }
+                  return (
+                    <div key={i} className="flex items-center gap-2 text-[13px]">
+                      {isMissing ? (
+                        <AlertTriangle className="w-3 h-3 text-[var(--grad-orange-start)] shrink-0" />
+                      ) : (
+                        <X className="w-3 h-3 text-[var(--danger)] shrink-0" />
+                      )}
+                      <span className="font-semibold text-[var(--text)]">{label}:</span>
+                      <span className="text-[var(--muted)]">{value}</span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          )}
-        </motion.div>
-      )}
+          </motion.div>
+        );
+      })()}
 
       <AnimatePresence>
         {lightboxUrl && (
