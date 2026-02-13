@@ -466,19 +466,6 @@ export function useAnalysisSimulation() {
     return newResult;
   }, []);
 
-  const addResult = useCallback((result: AnalysisResult) => {
-    setResults(prev => [result, ...prev]);
-    setStats(prev => ({
-      ...prev,
-      total: prev.total + 1,
-      approved: result.decision === "APPROVE" ? prev.approved + 1 : prev.approved,
-      rejected: result.decision === "REJECT" ? prev.rejected + 1 : prev.rejected,
-      manual: result.decision === "MANUAL_REVIEW" ? prev.manual + 1 : prev.manual,
-    }));
-    setToastMessage("Analysis complete");
-    setTimeout(() => setToastMessage(null), 3000);
-  }, []);
-
   const updateDecision = useCallback((id: number, decision: "APPROVE" | "REJECT" | "MANUAL_REVIEW") => {
     setResults(prev => prev.map(r => {
       if (r.id === id && r.decision !== decision) {
@@ -510,7 +497,6 @@ export function useAnalysisSimulation() {
     stats,
     toastMessage,
     runAnalysis,
-    addResult,
     updateDecision
   };
 }
