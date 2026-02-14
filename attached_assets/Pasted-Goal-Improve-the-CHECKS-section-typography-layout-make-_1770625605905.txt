@@ -1,0 +1,59 @@
+Goal: Improve the “CHECKS” section typography + layout (make it cleaner, more premium) WITHOUT changing any logic or introducing new colors outside existing CSS tokens.
+
+What to change
+1) Layout
+- Convert the current two-column “left list + right text” into a compact grid layout:
+  - Each check becomes a single row with:
+    [status icon] [check title] [small pill: PASS/FAIL] [short detail text]
+  - Keep all checks in one column (no duplicated right-side column).
+- Use consistent spacing:
+  - Row height ~40–44px
+  - Gap between rows ~10–12px
+  - Padding inside checks card ~16–20px
+
+2) Typography
+- Make “CHECKS” header smaller and tighter:
+  - 12–13px, uppercase, letter-spacing 0.08em, muted color.
+- Check title:
+  - 14–15px, semibold, text color.
+- Detail text:
+  - 12–13px, muted color.
+- Remove any underlines / excessive bolding.
+
+3) Visual treatment (token-only)
+- Each check row should be a subtle “surface chip”:
+  - Background: var(--panel2)
+  - Border: 1px solid var(--border)
+  - Radius: var(--radius)
+- Status icon:
+  - PASS uses var(--ok)
+  - FAIL uses var(--danger)
+- Add a small PASS/FAIL pill on the right:
+  - PASS pill bg: rgba(39,176,107,0.12) if available via tokens, otherwise use var(--panel2) with border var(--ok)
+  - FAIL pill bg: rgba(225,76,76,0.12) similarly, otherwise var(--panel2) with border var(--danger)
+  - Pill text: 11–12px, semibold
+
+4) Copy polish (text)
+- Change the check labels to short, consistent verbs:
+  - “Format valid” → “Valid format”
+  - “Required document present” → “Document provided”
+  - “Document type match” → “Type matches request”
+  - “Authenticity check” → “Authenticity verified”
+  - “Tamper check” → “No tampering detected”
+- Detail text should be even shorter (one phrase), e.g.:
+  - “File format accepted”
+  - “Uploaded successfully”
+  - “Matches expected type”
+  - “Appears authentic”
+  - “No anomalies found”
+
+Implementation notes
+- Update the JSX for the checks list so each item renders title + detail in one row (no separate right-side column).
+- Update CSS for the checks container + row chips + pills, but DO NOT add any new hex colors outside tokens.css.
+- Keep existing icons if present; otherwise use simple SVG/check/cross and color via tokens.
+- Verify quickly that the checks still reflect the same underlying pass/fail booleans and messages (logic unchanged).
+
+Acceptance criteria
+- The checks section looks cleaner and more consistent (grid rows with chips + pill)
+- No new colors introduced outside tokens.css
+- All checks still display correctly for pass/fail states

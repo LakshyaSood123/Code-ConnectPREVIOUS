@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { NavBar } from '@/components/NavBar';
 import { KpiTiles } from '@/components/KpiTiles';
 import { MainCard } from '@/components/MainCard';
 import { ResultRow } from '@/components/ResultRow';
 import { useAnalysisSimulation } from '@/hooks/use-analysis-simulation';
 import { ToolType } from '@shared/schema';
+import type { DocumentVerificationData } from '@/components/DocumentVerification';
 import { 
   FileText, 
   Search, 
@@ -25,17 +26,39 @@ const TABS: { id: ToolType; label: string; icon: any }[] = [
 
 export default function Home() {
   const [activeTool, setActiveTool] = useState<ToolType>('document');
+  const [docVerificationData, setDocVerificationData] = useState<DocumentVerificationData | null>(null);
   const { 
     isAnalyzing, 
     results, 
     stats, 
     toastMessage, 
     runAnalysis, 
+    addResult,
     updateDecision 
   } = useAnalysisSimulation();
 
+  const handleDocSlotAnalyzed = useCallback((slot: any) => {
+    addResult({
+      id: Math.floor(Math.random() * 100000),
+      filename: `[${slot.label}] ${slot.fileName || "unknown"}`,
+      toolType: "document",
+      riskScore: slot.riskScore,
+      priority: slot.riskLevel,
+      decision: slot.decision,
+      evidence: slot.checks.map((c: any) => `${c.pass ? "PASS" : "FAIL"}: ${c.name} — ${c.note}`),
+      actionRequired: slot.decision === "MANUAL_REVIEW" ? "Analyst verification needed" : null,
+      timestamp: new Date(),
+      previewUrl: slot.previewUrl,
+      metadata: null,
+      geolocation: null,
+      factCheck: null,
+      propaganda: null,
+      verification: null,
+    });
+  }, [addResult]);
+
   const handleExport = () => {
-    const exportData = {
+    const exportData: any = {
       generatedAt: new Date().toISOString(),
       appName: "Reagvis Labs Pvt. Ltd.",
       activeTool: activeTool,
@@ -47,6 +70,25 @@ export default function Home() {
       },
       results: results
     };
+
+    if (docVerificationData) {
+      exportData.documentVerification = {
+        selectedDocumentType: docVerificationData.selectedDocumentType,
+        requiredItems: docVerificationData.requiredItems.map(item => ({
+          id: item.id,
+          label: item.label,
+          expected: item.expected,
+          required: item.required,
+          fileName: item.fileName,
+          riskScore: item.riskScore,
+          riskLevel: item.riskLevel,
+          decision: item.decision,
+          checks: item.checks,
+          mismatchReason: item.mismatchReason,
+        })),
+        overallSummary: docVerificationData.overallSummary,
+      };
+    }
     
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
     const timestamp = new Date().toISOString().replace(/[:.]/g, '').replace('T', '-').split('Z')[0];
@@ -142,6 +184,8 @@ export default function Home() {
             activeTool={activeTool} 
             onAnalyze={(data) => runAnalysis({ ...data, toolType: activeTool })}
             isAnalyzing={isAnalyzing}
+            onDocVerificationChange={setDocVerificationData}
+            onDocSlotAnalyzed={handleDocSlotAnalyzed}
           />
         </motion.div>
 
