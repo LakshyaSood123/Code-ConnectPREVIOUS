@@ -74,10 +74,10 @@ export default function Home() {
           >
             <div>
               <h1 className="text-5xl md:text-6xl font-bold text-[var(--text)] tracking-tight mb-4 leading-tight">
-                Deepfake & Manipulation Detection
+                Metadata + Geo-temporal Verification
               </h1>
               <p className="text-lg md:text-xl text-[var(--muted)] max-w-2xl leading-relaxed">
-                Analyze media and documents for deepfakes, tampering, and authenticity signals.
+                Validate capture metadata, timestamps, and claimed location consistency across uploaded evidence.
               </p>
             </div>
             
