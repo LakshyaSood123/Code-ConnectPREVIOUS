@@ -74,10 +74,10 @@ export default function Home() {
           >
             <div>
               <h1 className="text-5xl md:text-6xl font-bold text-[var(--text)] tracking-tight mb-4 leading-tight">
-                Metadata + Geo-temporal Verification
+                Propaganda & Misinformation Avoidance
               </h1>
               <p className="text-lg md:text-xl text-[var(--muted)] max-w-2xl leading-relaxed">
-                Validate capture metadata, timestamps, and claimed location consistency across uploaded evidence.
+                Detect manipulative narratives, cross-check claims against verified references, and flag high-risk content for review.
               </p>
             </div>
             
