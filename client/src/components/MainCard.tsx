@@ -1,17 +1,14 @@
 import React, { useRef, useState } from 'react';
 import { UploadCloud, Search, AlertOctagon, FileText, Globe } from 'lucide-react';
 import { ToolType } from '@shared/schema';
-import { DocumentVerification, DocumentVerificationData } from './DocumentVerification';
 
 interface MainCardProps {
   activeTool: ToolType;
   onAnalyze: (data: { filename?: string; content?: string; file?: File; claimedLocation?: string; claimedEvent?: string }) => void;
   isAnalyzing: boolean;
-  onDocVerificationChange?: (data: DocumentVerificationData | null) => void;
-  onDocSlotAnalyzed?: (slot: any) => void;
 }
 
-export function MainCard({ activeTool, onAnalyze, isAnalyzing, onDocVerificationChange, onDocSlotAnalyzed }: MainCardProps) {
+export function MainCard({ activeTool, onAnalyze, isAnalyzing }: MainCardProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [textInput, setTextInput] = useState("");
   const [claimedLocation, setClaimedLocation] = useState("");
@@ -38,15 +35,6 @@ export function MainCard({ activeTool, onAnalyze, isAnalyzing, onDocVerification
 
   // Render content based on tool type
   const renderContent = () => {
-    if (activeTool === 'document') {
-      return (
-        <DocumentVerification
-          onResultsChange={onDocVerificationChange}
-          onSlotAnalyzed={onDocSlotAnalyzed}
-        />
-      );
-    }
-
     return (
       <div className="space-y-4">
         <div 
