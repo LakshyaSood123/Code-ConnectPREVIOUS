@@ -74,10 +74,10 @@ export default function Home() {
           >
             <div>
               <h1 className="text-5xl md:text-6xl font-bold text-[var(--text)] tracking-tight mb-4 leading-tight">
-                Propaganda & Misinformation Avoidance
+                Fact Checker (Claims + Evidence)
               </h1>
               <p className="text-lg md:text-xl text-[var(--muted)] max-w-2xl leading-relaxed">
-                Detect manipulative narratives, cross-check claims against verified references, and flag high-risk content for review.
+                Verify statements against trusted references, attach supporting evidence, and produce a clear pass/fail summary with citations.
               </p>
             </div>
             
