@@ -1,0 +1,49 @@
+Goal: Redesign the “NEEDS MANUAL REVIEW” banner to look premium + scannable (like a modern alert callout), while keeping the SAME meaning + logic. Token colors only.
+
+What to change
+1) Banner container (callout)
+- Turn it into a compact alert card with:
+  - Background: var(--panel2)
+  - Border: 1px solid var(--border)
+  - Left accent strip (4px) using the status color:
+    - Manual review: use the orange KPI gradient OR a warning tone derived from tokens:
+      - If you already have an “orange gradient” token pair, use it ONLY for the strip.
+      - Otherwise use var(--accent-2) as warning-ish substitute.
+  - Radius: var(--radius)
+  - Shadow: var(--shadow)
+
+2) Header row
+- Left: warning icon in a small circle badge (24–28px)
+  - Badge bg: var(--panel)
+  - Border: 1px solid var(--border)
+  - Icon color: same as the accent strip
+- Right of icon: title + short subtitle:
+  - Title: “Needs Manual Review” (14–16px, semibold, var(--text))
+  - Subtitle: “Action required before approval” (12–13px, var(--muted))
+- Keep header content aligned horizontally with good spacing (12–14px gap).
+
+3) Message formatting
+- Replace the raw lines with a bullet list (or “key/value” rows) inside the callout:
+  - Each line becomes a row with a small dot icon or mini check/alert icon:
+    - Authenticity: show “Authenticity: Appears real”
+    - Missing doc: show “Missing: Aadhaar card of groom”
+- Make labels semibold and values normal:
+  - Label color: var(--text)
+  - Value color: var(--muted)
+- Reduce vertical whitespace; keep it tight and readable.
+
+4) Optional CTA (nice to have)
+- Add a subtle “Review now” button on the far right of the header row (only if you already have a button component).
+  - Style: secondary button using existing tokens (border var(--border), bg var(--panel), text var(--text))
+  - No new logic required; it can just scroll to the Manual Review section or do nothing if not wired.
+
+Implementation notes
+- This banner should be one reusable component: <StatusCallout status="manual_review" items=[...] />
+- Use the same component for PASS/FAIL banners as well (future-proof), but ONLY change styling for this one now if you want minimal diffs.
+- Do NOT introduce any new hex colors outside tokens.css.
+- Keep the same content/conditions that trigger “Needs Manual Review”.
+
+Acceptance criteria
+- Looks like a modern alert card (icon badge + title/subtitle + compact bullet rows)
+- Much more scannable than plain text lines
+- Token-only colors, same behavior/logic
