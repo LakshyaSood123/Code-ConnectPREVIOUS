@@ -31,6 +31,14 @@ interface BoundingBox {
   label?: string;
 }
 
+interface ImperfectionCircle {
+  cx: number;
+  cy: number;
+  r: number;
+  label: string;
+  severity: 'low' | 'medium' | 'high';
+}
+
 interface FileVerdict {
   fileName: string;
   verdict: Verdict;
@@ -44,6 +52,7 @@ interface SubmissionResult {
     previewUrl: string;
     outputImageUrl?: string;
     boundingBoxes?: BoundingBox[];
+    circles?: ImperfectionCircle[];
   };
   overall: {
     decision: OverallDecision;
@@ -53,6 +62,7 @@ interface SubmissionResult {
   localization: {
     hasOutputImage: boolean;
     boundingBoxes?: BoundingBox[];
+    circles?: ImperfectionCircle[];
   };
 }
 
@@ -86,6 +96,15 @@ function getSampleBoundingBoxes(): BoundingBox[] {
     { x: 0.1, y: 0.15, w: 0.35, h: 0.25, label: 'Region A' },
     { x: 0.55, y: 0.4, w: 0.3, h: 0.2, label: 'Region B' },
     { x: 0.2, y: 0.7, w: 0.4, h: 0.15, label: 'Region C' },
+  ];
+}
+
+function getSampleCircles(): ImperfectionCircle[] {
+  return [
+    { cx: 0.25, cy: 0.3, r: 0.06, label: 'Splicing artifact', severity: 'high' },
+    { cx: 0.7, cy: 0.2, r: 0.045, label: 'Noise inconsistency', severity: 'medium' },
+    { cx: 0.5, cy: 0.65, r: 0.055, label: 'Clone region', severity: 'high' },
+    { cx: 0.15, cy: 0.75, r: 0.035, label: 'JPEG ghost', severity: 'low' },
   ];
 }
 
@@ -126,15 +145,18 @@ function ImageLightbox({
   imageUrl,
   outputImageUrl,
   boundingBoxes,
+  circles,
   onClose,
 }: {
   imageUrl: string;
   outputImageUrl?: string;
   boundingBoxes?: BoundingBox[];
+  circles?: ImperfectionCircle[];
   onClose: () => void;
 }) {
   const [zoom, setZoom] = useState(1);
   const [showOutput, setShowOutput] = useState(false);
+  const [hoveredCircle, setHoveredCircle] = useState<number | null>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const [imgSize, setImgSize] = useState({ w: 0, h: 0 });
 
@@ -146,6 +168,7 @@ function ImageLightbox({
 
   const currentSrc = showOutput && outputImageUrl ? outputImageUrl : imageUrl;
   const showBoxes = !showOutput && boundingBoxes && boundingBoxes.length > 0;
+  const showCircles = !showOutput && circles && circles.length > 0;
 
   return (
     <motion.div
@@ -262,6 +285,70 @@ function ImageLightbox({
                 })}
               </svg>
             )}
+            {showCircles && imgSize.w > 0 && (
+              <svg
+                className="absolute top-0 left-0"
+                style={{ pointerEvents: 'none' }}
+                width={imgRef.current?.width || imgSize.w}
+                height={imgRef.current?.height || imgSize.h}
+                viewBox={`0 0 ${imgRef.current?.width || imgSize.w} ${imgRef.current?.height || imgSize.h}`}
+                data-testid="circles-overlay"
+              >
+                {circles!.map((c, i) => {
+                  const dispW = imgRef.current?.width || imgSize.w;
+                  const dispH = imgRef.current?.height || imgSize.h;
+                  const cx = c.cx * dispW;
+                  const cy = c.cy * dispH;
+                  const r = c.r * Math.min(dispW, dispH);
+                  const strokeW = c.severity === 'high' ? 3 : c.severity === 'medium' ? 2.5 : 2;
+                  const fillOpacity = c.severity === 'high' ? 0.18 : c.severity === 'medium' ? 0.12 : 0.08;
+                  return (
+                    <g
+                      key={i}
+                      style={{ pointerEvents: 'all', cursor: 'pointer' }}
+                      onMouseEnter={() => setHoveredCircle(i)}
+                      onMouseLeave={() => setHoveredCircle(null)}
+                      data-testid={`circle-group-${i}`}
+                    >
+                      <circle
+                        cx={cx}
+                        cy={cy}
+                        r={r}
+                        fill={`rgba(225, 76, 76, ${fillOpacity})`}
+                        stroke="var(--danger)"
+                        strokeWidth={strokeW}
+                        strokeDasharray={c.severity === 'low' ? '4 3' : 'none'}
+                        data-testid={`circle-${i}`}
+                      />
+                      {hoveredCircle === i && (
+                        <g>
+                          <rect
+                            x={cx + r + 6}
+                            y={cy - 14}
+                            width={c.label.length * 7.2 + 16}
+                            height={24}
+                            rx={6}
+                            fill="var(--panel)"
+                            stroke="var(--danger)"
+                            strokeWidth={1}
+                          />
+                          <text
+                            x={cx + r + 14}
+                            y={cy + 1}
+                            fill="var(--danger)"
+                            fontSize="11"
+                            fontWeight="600"
+                            data-testid={`circle-tooltip-${i}`}
+                          >
+                            {c.label}
+                          </text>
+                        </g>
+                      )}
+                    </g>
+                  );
+                })}
+              </svg>
+            )}
           </div>
         </div>
       </motion.div>
@@ -342,9 +429,11 @@ export default function Home() {
 
       const imgLower = imageFile.name.toLowerCase();
       const hasBbox = imgLower.includes('bbox');
+      const hasCircles = imgLower.includes('bbox') || imgLower.includes('circles');
       const hasOutimg = imgLower.includes('outimg');
 
       const boundingBoxes = hasBbox ? getSampleBoundingBoxes() : undefined;
+      const circles = (hasCircles && imgResult.verdict === 'FAKE') ? getSampleCircles() : undefined;
       const outputImageUrl = hasOutimg ? imagePreviewUrl : undefined;
 
       const submission: SubmissionResult = {
@@ -355,11 +444,13 @@ export default function Home() {
           previewUrl: imagePreviewUrl,
           outputImageUrl,
           boundingBoxes,
+          circles,
         },
         overall,
         localization: {
           hasOutputImage: !!outputImageUrl,
           boundingBoxes,
+          circles,
         },
       };
 
@@ -595,6 +686,7 @@ export default function Home() {
             imageUrl={result.image.previewUrl}
             outputImageUrl={result.image.outputImageUrl}
             boundingBoxes={result.image.boundingBoxes}
+            circles={result.image.circles}
             onClose={() => setLightboxOpen(false)}
           />
         )}
