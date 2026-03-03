@@ -491,11 +491,13 @@ export default function Home() {
                 <button
                   onClick={canRun ? runVerification : undefined}
                   disabled={!canRun}
-                  className="w-full py-3.5 text-sm font-bold tracking-wide uppercase rounded-[var(--radius)] border-none cursor-pointer transition-all disabled:cursor-not-allowed"
+                  className="w-full py-3.5 text-sm font-bold tracking-wide uppercase rounded-[var(--radius)] cursor-pointer transition-all disabled:cursor-not-allowed"
                   style={{
-                    background: canRun ? 'var(--accent)' : 'var(--border)',
-                    color: canRun ? 'white' : 'var(--muted)',
-                    boxShadow: canRun ? 'var(--shadow-strong)' : 'none',
+                    background: 'var(--accent)',
+                    color: 'white',
+                    border: '2px solid var(--accent)',
+                    boxShadow: 'var(--shadow)',
+                    opacity: canRun ? 1 : 0.5,
                   }}
                   data-testid="button-run-verification"
                 >
