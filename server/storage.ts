@@ -1,29 +1,23 @@
-import { type AnalysisResult, type InsertAnalysisResult } from "@shared/schema";
+import { type Submission, type InsertSubmission } from "@shared/schema";
 
 export interface IStorage {
-  // We don't strictly need these for the frontend-only demo, but it satisfies the template
-  createAnalysisResult(result: InsertAnalysisResult): Promise<AnalysisResult>;
+  createSubmission(submission: InsertSubmission): Promise<Submission>;
 }
 
 export class MemStorage implements IStorage {
-  private results: Map<number, AnalysisResult>;
+  private submissions: Map<number, Submission>;
   private currentId: number;
 
   constructor() {
-    this.results = new Map();
+    this.submissions = new Map();
     this.currentId = 1;
   }
 
-  async createAnalysisResult(insertResult: InsertAnalysisResult): Promise<AnalysisResult> {
+  async createSubmission(insertSubmission: InsertSubmission): Promise<Submission> {
     const id = this.currentId++;
-    const result: AnalysisResult = { 
-      ...insertResult, 
-      id, 
-      timestamp: new Date(),
-      actionRequired: insertResult.actionRequired ?? null 
-    };
-    this.results.set(id, result);
-    return result;
+    const submission: Submission = { ...insertSubmission, id };
+    this.submissions.set(id, submission);
+    return submission;
   }
 }
 

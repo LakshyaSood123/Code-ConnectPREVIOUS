@@ -1,74 +1,23 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// We don't need a real DB for a frontend-only demo, but we define the shapes here for type safety.
-
-export const analysisResults = pgTable("analysis_results", {
+export const submissions = pgTable("submissions", {
   id: serial("id").primaryKey(),
-  filename: text("filename").notNull(),
-  toolType: text("tool_type").notNull(), // 'document', 'fact-check', 'propaganda', 'verification'
-  riskScore: integer("risk_score").notNull(),
-  priority: text("priority").notNull(), // 'LOW', 'MEDIUM', 'CRITICAL'
-  decision: text("decision").notNull(), // 'APPROVE', 'REJECT', 'MANUAL_REVIEW'
-  evidence: jsonb("evidence").$type<string[]>().notNull(),
-  actionRequired: text("action_required"),
-  timestamp: timestamp("timestamp").defaultNow(),
-  previewUrl: text("preview_url"),
-  metadata: jsonb("metadata").$type<{
-    decision: string;
-    evidence: string[];
-  }>(),
-  geolocation: jsonb("geolocation").$type<{
-    decision: string;
-    evidence: string[];
-  }>(),
-  factCheck: jsonb("fact_check").$type<{
-    verdict: string;
-    confidence: number;
-    referenceId: string;
-    trigger: string;
-    title?: string;
-    publisher?: string;
-    // Extended fields for detailed fact check
-    caseId?: string;
-    displayTitle?: string;
-    extractedEntities?: string[];
-    keyClaims?: string[];
-    evidenceCards?: string[];
-    whyManualReview?: string[];
-    verdictStatus?: string;
-    recommendedAction?: string;
-  }>(),
-  propaganda: jsonb("propaganda").$type<{
-    trigger: string;
-    score: number;
-    riskLevel: string;
-    indicatorsFound: string[];
-    evidenceExcerpts: string[];
-    matchedFacts: string[];
-  }>(),
-  verification: jsonb("verification").$type<{
-    claimedLocation: string;
-    claimedEvent: string;
-    predictedLocation: string;
-    predictedEvent: string;
-    confidence: number;
-    matchStatus: "match" | "mismatch" | "insufficient";
-    reasons: string[];
+  pdfFileName: text("pdf_file_name").notNull(),
+  pdfVerdict: text("pdf_verdict").notNull(),
+  pdfRiskScore: integer("pdf_risk_score").notNull(),
+  imageFileName: text("image_file_name").notNull(),
+  imageVerdict: text("image_verdict").notNull(),
+  imageRiskScore: integer("image_risk_score").notNull(),
+  overallDecision: text("overall_decision").notNull(),
+  overallRiskLevel: text("overall_risk_level").notNull(),
+  localization: jsonb("localization").$type<{
+    hasOutputImage: boolean;
+    boundingBoxes?: { x: number; y: number; w: number; h: number; label?: string }[];
   }>(),
 });
 
-export const insertAnalysisResultSchema = createInsertSchema(analysisResults);
-
-export type AnalysisResult = typeof analysisResults.$inferSelect;
-export type InsertAnalysisResult = z.infer<typeof insertAnalysisResultSchema>;
-
-export type ToolType = 'document' | 'fact-check' | 'propaganda' | 'verification';
-
-export type KpiStats = {
-  total: number;
-  rejected: number;
-  manual: number;
-  approved: number;
-};
+export const insertSubmissionSchema = createInsertSchema(submissions).omit({ id: true });
+export type Submission = typeof submissions.$inferSelect;
+export type InsertSubmission = z.infer<typeof insertSubmissionSchema>;

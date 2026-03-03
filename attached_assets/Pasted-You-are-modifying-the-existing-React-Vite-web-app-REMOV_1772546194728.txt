@@ -1,0 +1,122 @@
+You are modifying the existing React/Vite web app. REMOVE all previous features/modules and rebuild the app as a single-purpose UI for “PDF + Image Authenticity Verification” exactly as specified.
+
+GOAL (ONLY FEATURE)
+A single submission consists of exactly TWO uploads at the same time:
+1) One PDF report (PDF only)
+2) One evidence image (JPG/PNG/JPEG only)
+
+Treat them as ONE entity/submission card, but produce separate REAL/FAKE output for PDF and for Image.
+
+REMOVE PREVIOUS FEATURES (IMPORTANT)
+- Remove all other tabs/tools/modules and related UI: Fact Check, Propaganda, Verification, multi-document type schemas, manual review tab pages, etc.
+- Remove any code/components/state that are now unused.
+- The app should open directly on this single module screen.
+
+NEW APP STRUCTURE (Single screen)
+A) Header (simple)
+- Brand/logo area (keep existing logo if present)
+- Right side: “User” label
+- No “System Online” indicator
+
+B) Hero text
+- Title: “PDF + Image Authenticity Verification”
+- Subtitle: “Upload one PDF report and one evidence image. Each is verified independently in a single submission.”
+
+C) Dual upload card (must be the primary focus)
+- Slot 1: Upload PDF Report (accept .pdf only)
+- Slot 2: Upload Evidence Image (accept .jpg/.jpeg/.png only)
+- Until both are uploaded, show a banner:
+  “Documents pending: <missing item(s)>”
+  Examples:
+  - “Documents pending: PDF report”
+  - “Documents pending: Evidence image”
+- After both uploaded, show a button “Run Verification” (or auto-run immediately; either is fine, but must show processing delay)
+
+D) Processing delay (realistic)
+- After both uploaded and verification triggered:
+  - Show “Analyzing…” with spinner
+  - Delay 1.0–2.2 seconds (random)
+  - Then reveal results
+
+RESULT UI (Single submission entity)
+E) One combined submission card (like the small document box UI)
+- Inside the same card, show TWO square tiles side-by-side:
+  Left tile: PDF tile (icon + filename)
+  Right tile: Image thumbnail preview
+- Each tile must display its own verdict:
+  - “PDF: REAL/FAKE” + risk %
+  - “IMAGE: REAL/FAKE” + risk %
+- Overall decision for the submission shown at top-right of the card:
+  - If either is FAKE => OVERALL: REJECT (CRITICAL)
+  - Else if any is MEDIUM => OVERALL: MANUAL REVIEW (MEDIUM)
+  - Else => OVERALL: APPROVE (LOW)
+- Manual Review option should exist ONLY when overall is MEDIUM.
+
+IMAGE VIEWER (must implement)
+F) Clicking the image thumbnail opens a lightbox/modal:
+- Shows the image large
+- Supports zoom in/out (buttons are enough: + / -)
+- Click outside or X closes
+
+BACKEND-LIKE OUTPUT SUPPORT (must implement)
+G) The image result may include:
+1) Rare case: outputImage (backend returns a processed image)
+2) Common case: boundingBoxes coordinates to mark areas on the image
+
+Implement both display modes:
+- If outputImage exists:
+  - Show a toggle: “Original” / “Model Output”
+  - Display the output image when selected
+- Else if boundingBoxes exists:
+  - Draw rectangles over the original image in the lightbox
+  - Each box may have an optional label
+Coordinate support:
+- If box values <= 1 treat as relative (0..1 of width/height)
+- Else treat as absolute pixels
+
+DEMO / HARDCODED VERDICTS (no backend)
+H) Determine verdicts from filenames (case-insensitive):
+For PDF:
+- filename contains "_fake" => verdict FAKE, risk 90–95
+- filename contains "_real" => verdict REAL, risk 10–15
+- else => verdict MEDIUM, risk 55–65
+For Image:
+- same logic
+
+For demo of localization:
+- If IMAGE filename contains "bbox" => attach 2–3 sample bounding boxes and display them
+- If IMAGE filename contains "outimg" => attach outputImage (for demo you may reuse the same image as outputImage) and show toggle
+
+EXPORT REPORT (must download a file)
+I) Export button downloads JSON (not PDF) describing submission:
+{
+  generatedAt,
+  submissionId,
+  pdf: { fileName, verdict, riskScore },
+  image: { fileName, verdict, riskScore, localization: { hasOutputImage, boundingBoxes? } },
+  overall: { decision, riskLevel, notes }
+}
+Do NOT export blob URLs; only export boundingBoxes and boolean hasOutputImage.
+
+STYLING CONSTRAINTS
+- Use ONLY existing CSS token palette variables (var(--...)) and the edgy card style already present.
+- No new hex colors outside tokens.css.
+- Keep UI modern and interactive: hover/press states, smooth modal animations.
+
+ACCEPTANCE TEST FILENAMES
+1) PDF: report_real.pdf
+   Image: evidence_real_bbox.jpg
+   => PDF REAL, IMAGE REAL, boxes visible, overall APPROVE
+2) PDF: report_real.pdf
+   Image: evidence_fake_bbox.jpg
+   => IMAGE FAKE, boxes visible, overall REJECT
+3) PDF: report_unknown.pdf
+   Image: evidence_unknown_outimg.png
+   => both MEDIUM, output toggle visible, overall MANUAL REVIEW
+
+DELIVERABLE
+- App contains ONLY this module (no other tabs/pages)
+- Dual upload required, pending banner works, processing delay works
+- Single entity card shows both tiles and verdicts
+- Image modal supports zoom + bounding boxes and/or output image
+- Export downloads JSON

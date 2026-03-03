@@ -1,256 +1,615 @@
-import React, { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { NavBar } from '@/components/NavBar';
-import { KpiTiles } from '@/components/KpiTiles';
-import { MainCard } from '@/components/MainCard';
-import { ResultRow } from '@/components/ResultRow';
-import { useAnalysisSimulation } from '@/hooks/use-analysis-simulation';
-import { ToolType } from '@shared/schema';
-import type { DocumentVerificationData } from '@/components/DocumentVerification';
-import { 
-  FileText, 
-  Search, 
-  AlertOctagon, 
-  Globe, 
+import {
+  FileText,
+  ImageIcon,
+  Upload,
+  Loader2,
   Download,
-  Loader2
+  X,
+  ZoomIn,
+  ZoomOut,
+  AlertTriangle,
+  CheckCircle2,
+  XCircle,
+  Eye,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const TABS: { id: ToolType; label: string; icon: any }[] = [
-  { id: 'document', label: 'Document', icon: FileText },
-  { id: 'fact-check', label: 'Fact Check', icon: Search },
-  { id: 'propaganda', label: 'Propaganda', icon: AlertOctagon },
-  { id: 'verification', label: 'Verification', icon: Globe },
-];
+type Verdict = 'REAL' | 'FAKE' | 'MEDIUM';
+type OverallDecision = 'APPROVE' | 'REJECT' | 'MANUAL_REVIEW';
+
+interface BoundingBox {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  label?: string;
+}
+
+interface FileVerdict {
+  fileName: string;
+  verdict: Verdict;
+  riskScore: number;
+}
+
+interface SubmissionResult {
+  id: string;
+  pdf: FileVerdict;
+  image: FileVerdict & {
+    previewUrl: string;
+    outputImageUrl?: string;
+    boundingBoxes?: BoundingBox[];
+  };
+  overall: {
+    decision: OverallDecision;
+    riskLevel: string;
+    notes: string;
+  };
+  localization: {
+    hasOutputImage: boolean;
+    boundingBoxes?: BoundingBox[];
+  };
+}
+
+function randomInRange(min: number, max: number): number {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function getVerdict(fileName: string): FileVerdict {
+  const lower = fileName.toLowerCase();
+  if (lower.includes('_fake')) {
+    return { fileName, verdict: 'FAKE', riskScore: randomInRange(90, 95) };
+  }
+  if (lower.includes('_real')) {
+    return { fileName, verdict: 'REAL', riskScore: randomInRange(10, 15) };
+  }
+  return { fileName, verdict: 'MEDIUM', riskScore: randomInRange(55, 65) };
+}
+
+function getOverall(pdfVerdict: Verdict, imgVerdict: Verdict): { decision: OverallDecision; riskLevel: string; notes: string } {
+  if (pdfVerdict === 'FAKE' || imgVerdict === 'FAKE') {
+    return { decision: 'REJECT', riskLevel: 'CRITICAL', notes: 'One or more documents flagged as FAKE.' };
+  }
+  if (pdfVerdict === 'MEDIUM' || imgVerdict === 'MEDIUM') {
+    return { decision: 'MANUAL_REVIEW', riskLevel: 'MEDIUM', notes: 'Inconclusive results require manual analyst review.' };
+  }
+  return { decision: 'APPROVE', riskLevel: 'LOW', notes: 'All documents verified as authentic.' };
+}
+
+function getSampleBoundingBoxes(): BoundingBox[] {
+  return [
+    { x: 0.1, y: 0.15, w: 0.35, h: 0.25, label: 'Region A' },
+    { x: 0.55, y: 0.4, w: 0.3, h: 0.2, label: 'Region B' },
+    { x: 0.2, y: 0.7, w: 0.4, h: 0.15, label: 'Region C' },
+  ];
+}
+
+function DecisionPill({ decision, riskLevel }: { decision: OverallDecision; riskLevel: string }) {
+  const cls =
+    decision === 'REJECT'
+      ? 'pill pill-critical'
+      : decision === 'MANUAL_REVIEW'
+        ? 'pill pill-warning'
+        : 'pill pill-success';
+  const label =
+    decision === 'REJECT'
+      ? `REJECT (${riskLevel})`
+      : decision === 'MANUAL_REVIEW'
+        ? `MANUAL REVIEW (${riskLevel})`
+        : `APPROVE (${riskLevel})`;
+  return <span className={cls} data-testid="pill-overall-decision">{label}</span>;
+}
+
+function VerdictBadge({ verdict, riskScore, type }: { verdict: Verdict; riskScore: number; type: 'PDF' | 'IMAGE' }) {
+  const color =
+    verdict === 'FAKE'
+      ? 'text-[var(--danger)]'
+      : verdict === 'REAL'
+        ? 'text-[var(--ok)]'
+        : 'text-[var(--grad-orange-start)]';
+  return (
+    <div className="mt-2" data-testid={`verdict-${type.toLowerCase()}`}>
+      <span className={`text-xs font-bold uppercase tracking-wider ${color}`}>
+        {type}: {verdict}
+      </span>
+      <div className="text-[10px] text-[var(--muted)] mt-0.5">Risk: {riskScore}%</div>
+    </div>
+  );
+}
+
+function ImageLightbox({
+  imageUrl,
+  outputImageUrl,
+  boundingBoxes,
+  onClose,
+}: {
+  imageUrl: string;
+  outputImageUrl?: string;
+  boundingBoxes?: BoundingBox[];
+  onClose: () => void;
+}) {
+  const [zoom, setZoom] = useState(1);
+  const [showOutput, setShowOutput] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
+  const [imgSize, setImgSize] = useState({ w: 0, h: 0 });
+
+  const handleImageLoad = () => {
+    if (imgRef.current) {
+      setImgSize({ w: imgRef.current.naturalWidth, h: imgRef.current.naturalHeight });
+    }
+  };
+
+  const currentSrc = showOutput && outputImageUrl ? outputImageUrl : imageUrl;
+  const showBoxes = !showOutput && boundingBoxes && boundingBoxes.length > 0;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm"
+      onClick={onClose}
+      data-testid="lightbox-backdrop"
+    >
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.9, opacity: 0 }}
+        transition={{ type: 'spring', damping: 25 }}
+        className="relative max-w-[90vw] max-h-[90vh] flex flex-col items-center"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="absolute -top-12 right-0 flex items-center gap-2 z-10">
+          {outputImageUrl && (
+            <div className="flex bg-[var(--panel)] rounded-lg border border-[var(--border)] overflow-hidden mr-2" data-testid="toggle-output-image">
+              <button
+                onClick={() => setShowOutput(false)}
+                className={`px-3 py-1.5 text-xs font-semibold transition-colors ${!showOutput ? 'bg-[var(--accent)] text-white' : 'text-[var(--muted)] hover:text-[var(--text)]'}`}
+                data-testid="button-original"
+              >
+                Original
+              </button>
+              <button
+                onClick={() => setShowOutput(true)}
+                className={`px-3 py-1.5 text-xs font-semibold transition-colors ${showOutput ? 'bg-[var(--accent)] text-white' : 'text-[var(--muted)] hover:text-[var(--text)]'}`}
+                data-testid="button-model-output"
+              >
+                Model Output
+              </button>
+            </div>
+          )}
+          <button
+            onClick={() => setZoom((z) => Math.min(z + 0.25, 3))}
+            className="w-8 h-8 rounded-full bg-[var(--panel)] border border-[var(--border)] flex items-center justify-center hover:border-[var(--accent)] transition-colors"
+            data-testid="button-zoom-in"
+          >
+            <ZoomIn className="w-4 h-4 text-[var(--text)]" />
+          </button>
+          <button
+            onClick={() => setZoom((z) => Math.max(z - 0.25, 0.5))}
+            className="w-8 h-8 rounded-full bg-[var(--panel)] border border-[var(--border)] flex items-center justify-center hover:border-[var(--accent)] transition-colors"
+            data-testid="button-zoom-out"
+          >
+            <ZoomOut className="w-4 h-4 text-[var(--text)]" />
+          </button>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full bg-[var(--panel)] border border-[var(--border)] flex items-center justify-center hover:border-[var(--danger)] transition-colors"
+            data-testid="button-close-lightbox"
+          >
+            <X className="w-4 h-4 text-[var(--text)]" />
+          </button>
+        </div>
+
+        <div className="overflow-auto max-w-[85vw] max-h-[80vh] rounded-xl border border-[var(--border)]">
+          <div style={{ transform: `scale(${zoom})`, transformOrigin: 'top left', transition: 'transform 0.2s ease', position: 'relative', display: 'inline-block' }}>
+            <img
+              ref={imgRef}
+              src={currentSrc}
+              onLoad={handleImageLoad}
+              alt="Evidence"
+              className="block max-w-none"
+              style={{ maxWidth: '85vw', maxHeight: '80vh', objectFit: 'contain' }}
+              data-testid="lightbox-image"
+            />
+            {showBoxes && imgSize.w > 0 && (
+              <svg
+                className="absolute top-0 left-0 pointer-events-none"
+                width={imgRef.current?.width || imgSize.w}
+                height={imgRef.current?.height || imgSize.h}
+                viewBox={`0 0 ${imgRef.current?.width || imgSize.w} ${imgRef.current?.height || imgSize.h}`}
+              >
+                {boundingBoxes!.map((box, i) => {
+                  const dispW = imgRef.current?.width || imgSize.w;
+                  const dispH = imgRef.current?.height || imgSize.h;
+                  const isRelative = box.x <= 1 && box.y <= 1 && box.w <= 1 && box.h <= 1;
+                  const bx = isRelative ? box.x * dispW : box.x;
+                  const by = isRelative ? box.y * dispH : box.y;
+                  const bw = isRelative ? box.w * dispW : box.w;
+                  const bh = isRelative ? box.h * dispH : box.h;
+                  return (
+                    <g key={i}>
+                      <rect
+                        x={bx}
+                        y={by}
+                        width={bw}
+                        height={bh}
+                        fill="rgba(225, 76, 76, 0.15)"
+                        stroke="var(--danger)"
+                        strokeWidth="2"
+                        rx="4"
+                        data-testid={`bbox-rect-${i}`}
+                      />
+                      {box.label && (
+                        <text
+                          x={bx + 4}
+                          y={by - 6}
+                          fill="var(--danger)"
+                          fontSize="12"
+                          fontWeight="bold"
+                          data-testid={`bbox-label-${i}`}
+                        >
+                          {box.label}
+                        </text>
+                      )}
+                    </g>
+                  );
+                })}
+              </svg>
+            )}
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
 
 export default function Home() {
-  const [activeTool, setActiveTool] = useState<ToolType>('document');
-  const [docVerificationData, setDocVerificationData] = useState<DocumentVerificationData | null>(null);
-  const { 
-    isAnalyzing, 
-    results, 
-    stats, 
-    toastMessage, 
-    runAnalysis, 
-    addResult,
-    updateDecision 
-  } = useAnalysisSimulation();
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [result, setResult] = useState<SubmissionResult | null>(null);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
-  const handleDocSlotAnalyzed = useCallback((slot: any) => {
-    addResult({
-      id: Math.floor(Math.random() * 100000),
-      filename: `[${slot.label}] ${slot.fileName || "unknown"}`,
-      toolType: "document",
-      riskScore: slot.riskScore,
-      priority: slot.riskLevel,
-      decision: slot.decision,
-      evidence: slot.checks.map((c: any) => `${c.pass ? "PASS" : "FAIL"}: ${c.name} — ${c.note}`),
-      actionRequired: slot.decision === "MANUAL_REVIEW" ? "Analyst verification needed" : null,
-      timestamp: new Date(),
-      previewUrl: slot.previewUrl,
-      metadata: null,
-      geolocation: null,
-      factCheck: null,
-      propaganda: null,
-      verification: null,
-    });
-  }, [addResult]);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
+  const imgInputRef = useRef<HTMLInputElement>(null);
 
-  const handleExport = () => {
-    const exportData: any = {
+  const handlePdfSelect = useCallback((file: File) => {
+    setPdfFile(file);
+    setResult(null);
+  }, []);
+
+  const handleImageSelect = useCallback((file: File) => {
+    setImageFile(file);
+    const url = URL.createObjectURL(file);
+    setImagePreviewUrl(url);
+    setResult(null);
+  }, []);
+
+  const pendingItems: string[] = [];
+  if (!pdfFile) pendingItems.push('PDF report');
+  if (!imageFile) pendingItems.push('Evidence image');
+
+  const canRun = pdfFile !== null && imageFile !== null && !isAnalyzing && !result;
+
+  const runVerification = useCallback(() => {
+    if (!pdfFile || !imageFile || !imagePreviewUrl) return;
+    setIsAnalyzing(true);
+
+    const delay = 1000 + Math.random() * 1200;
+
+    setTimeout(() => {
+      const pdfResult = getVerdict(pdfFile.name);
+      const imgResult = getVerdict(imageFile.name);
+      const overall = getOverall(pdfResult.verdict, imgResult.verdict);
+
+      const imgLower = imageFile.name.toLowerCase();
+      const hasBbox = imgLower.includes('bbox');
+      const hasOutimg = imgLower.includes('outimg');
+
+      const boundingBoxes = hasBbox ? getSampleBoundingBoxes() : undefined;
+      const outputImageUrl = hasOutimg ? imagePreviewUrl : undefined;
+
+      const submission: SubmissionResult = {
+        id: `SUB-${Date.now().toString(36).toUpperCase()}`,
+        pdf: pdfResult,
+        image: {
+          ...imgResult,
+          previewUrl: imagePreviewUrl,
+          outputImageUrl,
+          boundingBoxes,
+        },
+        overall,
+        localization: {
+          hasOutputImage: !!outputImageUrl,
+          boundingBoxes,
+        },
+      };
+
+      setResult(submission);
+      setIsAnalyzing(false);
+    }, delay);
+  }, [pdfFile, imageFile, imagePreviewUrl]);
+
+  const handleReset = useCallback(() => {
+    setPdfFile(null);
+    setImageFile(null);
+    if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
+    setImagePreviewUrl(null);
+    setResult(null);
+    setIsAnalyzing(false);
+  }, [imagePreviewUrl]);
+
+  const handleExport = useCallback(() => {
+    if (!result) return;
+    const exportData = {
       generatedAt: new Date().toISOString(),
-      appName: "Reagvis Labs Pvt. Ltd.",
-      activeTool: activeTool,
-      summary: {
-        total: stats.total,
-        rejected: stats.rejected,
-        manualReview: stats.manual,
-        approved: stats.approved
+      submissionId: result.id,
+      pdf: {
+        fileName: result.pdf.fileName,
+        verdict: result.pdf.verdict,
+        riskScore: result.pdf.riskScore,
       },
-      results: results
+      image: {
+        fileName: result.image.fileName,
+        verdict: result.image.verdict,
+        riskScore: result.image.riskScore,
+        localization: {
+          hasOutputImage: result.localization.hasOutputImage,
+          boundingBoxes: result.localization.boundingBoxes,
+        },
+      },
+      overall: result.overall,
     };
 
-    if (docVerificationData) {
-      exportData.documentVerification = {
-        selectedDocumentType: docVerificationData.selectedDocumentType,
-        requiredItems: docVerificationData.requiredItems.map(item => ({
-          id: item.id,
-          label: item.label,
-          expected: item.expected,
-          required: item.required,
-          fileName: item.fileName,
-          riskScore: item.riskScore,
-          riskLevel: item.riskLevel,
-          decision: item.decision,
-          checks: item.checks,
-          mismatchReason: item.mismatchReason,
-        })),
-        overallSummary: docVerificationData.overallSummary,
-      };
-    }
-    
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '').replace('T', '-').split('Z')[0];
-    const filename = `reagvis-labs-report-${timestamp}.json`;
-    
-    const downloadAnchorNode = document.createElement('a');
-    downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute("download", filename);
-    document.body.appendChild(downloadAnchorNode);
-    downloadAnchorNode.click();
-    downloadAnchorNode.remove();
-  };
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const ts = new Date().toISOString().replace(/[:.]/g, '').replace('T', '-').split('Z')[0];
+    a.download = `verification-report-${ts}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }, [result]);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  }, []);
 
   return (
     <div className="min-h-screen bg-[var(--bg)] pb-20 font-sans selection:bg-[var(--accent)] selection:text-white">
       <NavBar />
-      
-      <main className="max-w-[1280px] mx-auto px-6 pt-12">
-        {/* Hero Section */}
-        <div className="mb-12 text-center md:text-left">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col md:flex-row md:items-end justify-between gap-6"
-          >
-            <div>
-              <h1 className="text-5xl md:text-6xl font-bold text-[var(--text)] tracking-tight mb-4 leading-tight">
-                Advanced Verification
-              </h1>
-              <p className="text-lg md:text-xl text-[var(--muted)] max-w-2xl leading-relaxed">
-                Analyze digital assets using AI-driven forensics, semantic analysis, and metadata verification.
-              </p>
-            </div>
-            
-            <button 
-              onClick={handleExport}
-              disabled={results.length === 0}
-              className="btn btn-secondary disabled:opacity-50 disabled:cursor-not-allowed hover-elevate active-elevate-2 h-11 px-6 text-sm font-semibold tracking-wide uppercase transition-all"
-            >
-              <Download className="w-4 h-4" />
-              Export Report
-            </button>
-          </motion.div>
-        </div>
 
-        {/* KPI Tiles */}
-        <motion.div
-           initial={{ opacity: 0, y: 20 }}
-           animate={{ opacity: 1, y: 0 }}
-           transition={{ delay: 0.1 }}
-           className="mb-12"
-        >
-          <KpiTiles stats={stats} />
+      <main className="max-w-[960px] mx-auto px-6 pt-12">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-10 text-center">
+          <h1 className="text-4xl md:text-5xl font-bold text-[var(--text)] tracking-tight mb-3 leading-tight" data-testid="text-hero-title">
+            PDF + Image Authenticity Verification
+          </h1>
+          <p className="text-base md:text-lg text-[var(--muted)] max-w-2xl mx-auto leading-relaxed" data-testid="text-hero-subtitle">
+            Upload one PDF report and one evidence image. Each is verified independently in a single submission.
+          </p>
         </motion.div>
 
-        {/* Tool Tabs */}
-        <div className="flex flex-wrap gap-1 mb-8 border-b border-[var(--border)]">
-          {TABS.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTool === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTool(tab.id)}
-                className={cn(
-                  "flex items-center gap-2 px-6 py-4 font-semibold text-sm transition-all relative",
-                  isActive 
-                    ? "text-[var(--accent)] bg-[var(--panel2)]/50" 
-                    : "text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--panel2)]/30"
-                )}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="card p-6 mb-8"
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <UploadSlot
+              label="Upload PDF Report"
+              accept=".pdf"
+              icon={<FileText className="w-8 h-8 text-[var(--accent)]" />}
+              file={pdfFile}
+              inputRef={pdfInputRef}
+              onSelect={handlePdfSelect}
+              testId="upload-pdf"
+            />
+            <UploadSlot
+              label="Upload Evidence Image"
+              accept=".jpg,.jpeg,.png"
+              icon={<ImageIcon className="w-8 h-8 text-[var(--accent-2)]" />}
+              file={imageFile}
+              previewUrl={imagePreviewUrl}
+              inputRef={imgInputRef}
+              onSelect={handleImageSelect}
+              testId="upload-image"
+            />
+          </div>
+
+          <AnimatePresence mode="wait">
+            {pendingItems.length > 0 && !result && (
+              <motion.div
+                key="pending"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mt-5 flex items-center gap-2 px-4 py-3 rounded-lg bg-[var(--panel2)] border border-[var(--border)]"
+                data-testid="banner-pending"
               >
-                <Icon className={cn("w-4 h-4", isActive ? "text-[var(--accent)]" : "text-[var(--muted)]")} />
-                {tab.label}
-                {isActive && (
-                  <motion.div 
-                    layoutId="activeTab"
-                    className="absolute bottom-0 left-0 w-full h-[3px] bg-[var(--accent)]" 
-                  />
-                )}
-              </button>
-            );
-          })}
-        </div>
+                <AlertTriangle className="w-4 h-4 text-[var(--grad-orange-start)] shrink-0" />
+                <span className="text-sm text-[var(--muted)]">
+                  Documents pending: <span className="text-[var(--text)] font-medium">{pendingItems.join(', ')}</span>
+                </span>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-        {/* Main Analysis Card */}
-        <motion.div
-           key={activeTool}
-           initial={{ opacity: 0, x: -10 }}
-           animate={{ opacity: 1, x: 0 }}
-           transition={{ duration: 0.2 }}
-        >
-          <MainCard 
-            activeTool={activeTool} 
-            onAnalyze={(data) => runAnalysis({ ...data, toolType: activeTool })}
-            isAnalyzing={isAnalyzing}
-            onDocVerificationChange={setDocVerificationData}
-            onDocSlotAnalyzed={handleDocSlotAnalyzed}
-          />
+          {canRun && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-5 flex justify-center">
+              <button onClick={runVerification} className="btn btn-primary px-8 py-3 text-base" data-testid="button-run-verification">
+                Run Verification
+              </button>
+            </motion.div>
+          )}
+
+          {isAnalyzing && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-5 flex flex-col items-center gap-3 py-4">
+              <Loader2 className="w-8 h-8 text-[var(--accent)] animate-spin" />
+              <span className="text-sm font-semibold text-[var(--text)] tracking-wide" data-testid="text-analyzing">Analyzing...</span>
+            </motion.div>
+          )}
         </motion.div>
 
-        {/* Results Section */}
-        <div className="mt-12">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="heading-2">Recent Analysis</h2>
-            <span className="text-sm text-[var(--muted)]">
-              Showing {results.length} results
-            </span>
-          </div>
+        <AnimatePresence>
+          {result && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="card p-6 mb-6"
+              data-testid="card-result"
+            >
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <span className="text-xs text-[var(--muted)] font-mono">{result.id}</span>
+                  <h3 className="text-lg font-bold text-[var(--text)]">Verification Result</h3>
+                </div>
+                <DecisionPill decision={result.overall.decision} riskLevel={result.overall.riskLevel} />
+              </div>
 
-          <div className="space-y-4">
-            <AnimatePresence>
-              {results.length === 0 ? (
-                <motion.div 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="text-center py-20 border border-dashed border-[var(--border)] rounded-xl bg-[var(--panel2)]"
+              <div className="grid grid-cols-2 gap-4 mb-5">
+                <div className="rounded-xl bg-[var(--panel2)] border border-[var(--border)] p-4 flex flex-col items-center justify-center text-center min-h-[160px] transition-colors hover:border-[var(--accent)]" data-testid="tile-pdf">
+                  <FileText className="w-10 h-10 text-[var(--accent)] mb-2" />
+                  <span className="text-xs text-[var(--muted)] truncate max-w-full" title={result.pdf.fileName} data-testid="text-pdf-filename">
+                    {result.pdf.fileName}
+                  </span>
+                  <VerdictBadge verdict={result.pdf.verdict} riskScore={result.pdf.riskScore} type="PDF" />
+                </div>
+
+                <div
+                  className="rounded-xl bg-[var(--panel2)] border border-[var(--border)] p-4 flex flex-col items-center justify-center text-center min-h-[160px] cursor-pointer transition-colors hover:border-[var(--accent-2)] group relative"
+                  onClick={() => setLightboxOpen(true)}
+                  data-testid="tile-image"
                 >
-                  <div className="w-16 h-16 rounded-full bg-[var(--border)] flex items-center justify-center mx-auto mb-4">
-                    <Search className="w-8 h-8 text-[var(--muted)]" />
+                  {imagePreviewUrl ? (
+                    <div className="w-16 h-16 rounded-lg overflow-hidden mb-2 border border-[var(--border)]">
+                      <img src={imagePreviewUrl} alt="Evidence" className="w-full h-full object-cover" data-testid="img-thumbnail" />
+                    </div>
+                  ) : (
+                    <ImageIcon className="w-10 h-10 text-[var(--accent-2)] mb-2" />
+                  )}
+                  <span className="text-xs text-[var(--muted)] truncate max-w-full" title={result.image.fileName} data-testid="text-image-filename">
+                    {result.image.fileName}
+                  </span>
+                  <VerdictBadge verdict={result.image.verdict} riskScore={result.image.riskScore} type="IMAGE" />
+                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Eye className="w-4 h-4 text-[var(--muted)]" />
                   </div>
-                  <h3 className="text-lg font-medium text-[var(--text)] mb-1">No analysis yet</h3>
-                  <p className="text-[var(--muted)]">Upload a file or paste text to begin verification.</p>
-                </motion.div>
-              ) : (
-                results.map((result) => (
-                  <ResultRow 
-                    key={result.id} 
-                    result={result}
-                    onApprove={(id) => updateDecision(id, 'APPROVE')}
-                    onReject={(id) => updateDecision(id, 'REJECT')}
-                    onManualReview={(id) => updateDecision(id, 'MANUAL_REVIEW')}
-                  />
-                ))
-              )}
-            </AnimatePresence>
-          </div>
-        </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-4 border-t border-[var(--border)]">
+                <p className="text-sm text-[var(--muted)]">{result.overall.notes}</p>
+                <div className="flex gap-2">
+                  <button onClick={handleExport} className="btn btn-secondary text-sm px-4 py-2" data-testid="button-export">
+                    <Download className="w-4 h-4" />
+                    Export JSON
+                  </button>
+                  <button onClick={handleReset} className="btn btn-ghost text-sm px-4 py-2" data-testid="button-new-submission">
+                    New Submission
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
 
-      {/* Floating Processing Toast */}
       <AnimatePresence>
-        {toastMessage && (
-          <motion.div
-            initial={{ opacity: 0, y: 50, x: 20 }}
-            animate={{ opacity: 1, y: 0, x: 0 }}
-            exit={{ opacity: 0, y: 50, x: 20 }}
-            className="fixed bottom-8 right-8 z-[100] bg-[var(--panel)] border border-[var(--border)] shadow-[var(--shadow-strong)] rounded-[var(--radius)] p-5 flex items-center gap-4 min-w-[300px]"
-          >
-            {isAnalyzing ? (
-               <Loader2 className="w-5 h-5 text-[var(--accent)] animate-spin" />
-            ) : (
-               <div className="w-3 h-3 rounded-full bg-[var(--ok)] shadow-[0_0_12px_var(--ok)]" />
-            )}
-            <div className="flex flex-col">
-              <span className="font-bold text-[var(--text)] text-sm tracking-tight">
-                {isAnalyzing ? "Processing..." : "Action Complete"}
-              </span>
-              <span className="text-[var(--muted)] text-xs font-medium">{toastMessage}</span>
-            </div>
-          </motion.div>
+        {lightboxOpen && result && (
+          <ImageLightbox
+            imageUrl={result.image.previewUrl}
+            outputImageUrl={result.image.outputImageUrl}
+            boundingBoxes={result.image.boundingBoxes}
+            onClose={() => setLightboxOpen(false)}
+          />
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+function UploadSlot({
+  label,
+  accept,
+  icon,
+  file,
+  previewUrl,
+  inputRef,
+  onSelect,
+  testId,
+}: {
+  label: string;
+  accept: string;
+  icon: JSX.Element;
+  file: File | null;
+  previewUrl?: string | null;
+  inputRef: React.RefObject<HTMLInputElement>;
+  onSelect: (file: File) => void;
+  testId: string;
+}) {
+  const [dragOver, setDragOver] = useState(false);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setDragOver(false);
+      const f = e.dataTransfer.files[0];
+      if (f) onSelect(f);
+    },
+    [onSelect],
+  );
+
+  return (
+    <div
+      className={`file-drop-area flex flex-col items-center justify-center min-h-[160px] ${dragOver ? 'border-[var(--accent)] bg-[rgba(59,130,246,0.05)]' : ''}`}
+      onDragOver={(e) => {
+        e.preventDefault();
+        setDragOver(true);
+      }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={handleDrop}
+      onClick={() => inputRef.current?.click()}
+      data-testid={testId}
+    >
+      <input
+        ref={inputRef as React.RefObject<HTMLInputElement>}
+        type="file"
+        accept={accept}
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) onSelect(f);
+        }}
+        data-testid={`${testId}-input`}
+      />
+
+      {file ? (
+        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center gap-2">
+          {previewUrl ? (
+            <div className="w-16 h-16 rounded-lg overflow-hidden border border-[var(--border)]">
+              <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+            </div>
+          ) : (
+            <CheckCircle2 className="w-8 h-8 text-[var(--ok)]" />
+          )}
+          <span className="text-sm font-medium text-[var(--text)] truncate max-w-[200px]">{file.name}</span>
+          <span className="text-xs text-[var(--ok)]">Ready</span>
+        </motion.div>
+      ) : (
+        <>
+          {icon}
+          <h3 className="text-sm font-semibold text-[var(--text)] mt-3 mb-1">{label}</h3>
+          <p className="text-xs text-[var(--muted)]">Drag & drop or click to browse</p>
+          <p className="text-[10px] text-[var(--muted)] mt-1">Accepts: {accept}</p>
+        </>
+      )}
     </div>
   );
 }
