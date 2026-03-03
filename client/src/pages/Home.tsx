@@ -327,7 +327,7 @@ export default function Home() {
   if (!pdfFile) pendingItems.push('PDF report');
   if (!imageFile) pendingItems.push('Evidence image');
 
-  const canRun = pdfFile !== null && imageFile !== null && !isAnalyzing && !result;
+  const canRun = Boolean(pdfFile) && Boolean(imageFile) && !isAnalyzing;
 
   const runVerification = useCallback(() => {
     if (!pdfFile || !imageFile || !imagePreviewUrl) return;
@@ -480,36 +480,44 @@ export default function Home() {
             />
           </div>
 
-          <div className="mt-6 flex flex-col items-center gap-3">
-            {isAnalyzing ? (
-              <div className="flex items-center gap-3 py-3">
-                <Loader2 className="w-5 h-5 text-[var(--accent)] animate-spin" />
-                <span className="text-sm font-semibold text-[var(--text)] tracking-wide" data-testid="text-analyzing">Analyzing...</span>
-              </div>
-            ) : !result ? (
-              <>
-                <button
-                  onClick={canRun ? runVerification : undefined}
-                  disabled={!canRun}
-                  className="w-full py-3.5 text-sm font-bold tracking-wide uppercase rounded-[var(--radius)] cursor-pointer transition-all disabled:cursor-not-allowed"
-                  style={{
-                    background: 'var(--accent)',
-                    color: 'white',
-                    border: '2px solid var(--accent)',
-                    boxShadow: 'var(--shadow)',
-                    opacity: canRun ? 1 : 0.5,
-                  }}
-                  data-testid="button-run-verification"
-                >
-                  Run Verification
-                </button>
-                {pendingItems.length > 0 && (
-                  <span className="text-xs text-[var(--muted)]" data-testid="banner-pending">
-                    Upload both files to continue
-                  </span>
-                )}
-              </>
-            ) : null}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '16px 0', gap: '8px' }}>
+            <button
+              onClick={canRun && !result ? runVerification : undefined}
+              disabled={!canRun || !!result}
+              className="disabled:cursor-not-allowed"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                width: '100%',
+                minWidth: '200px',
+                padding: '14px 24px',
+                fontSize: '14px',
+                fontWeight: 700,
+                letterSpacing: '0.05em',
+                textTransform: 'uppercase' as const,
+                borderRadius: 'var(--radius)',
+                border: canRun ? 'none' : '1px solid var(--border)',
+                background: canRun ? 'var(--accent)' : 'var(--panel2)',
+                color: canRun ? 'white' : 'var(--muted)',
+                boxShadow: canRun ? 'var(--shadow-strong)' : 'none',
+                opacity: 1,
+                cursor: canRun && !result ? 'pointer' : 'not-allowed',
+                transition: 'all 0.2s ease',
+              }}
+              data-testid="button-run-verification"
+            >
+              {isAnalyzing && <Loader2 className="w-4 h-4 animate-spin" />}
+              {isAnalyzing ? 'Analyzing\u2026' : 'Run Verification'}
+            </button>
+            <span className="text-xs text-[var(--muted)]" data-testid="banner-pending">
+              {result
+                ? '\u00A0'
+                : pendingItems.length > 0
+                  ? 'Upload both files to continue'
+                  : 'Ready to verify'}
+            </span>
           </div>
         </motion.div>
 
