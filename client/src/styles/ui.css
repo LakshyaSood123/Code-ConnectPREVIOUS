@@ -87,7 +87,7 @@
 }
 
 .btn-ghost:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--panel2);
   color: var(--text);
 }
 
@@ -160,7 +160,7 @@
   padding: 40px;
   text-align: center;
   transition: all 0.2s ease;
-  background: rgba(255, 255, 255, 0.01);
+  background: var(--panel2);
   cursor: pointer;
 }
 

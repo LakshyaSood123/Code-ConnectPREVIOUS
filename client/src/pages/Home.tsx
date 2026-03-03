@@ -13,6 +13,10 @@ import {
   CheckCircle2,
   XCircle,
   Eye,
+  ScanLine,
+  ShieldAlert,
+  ClipboardCheck,
+  ShieldCheck,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -265,6 +269,36 @@ function ImageLightbox({
   );
 }
 
+function KpiTiles({ stats }: { stats: { total: number; rejected: number; manual: number; approved: number } }) {
+  const tiles = [
+    { label: 'Total Scanned', value: stats.total, icon: ScanLine, gradient: 'bg-gradient-teal' },
+    { label: 'Risk Detected', value: stats.rejected, icon: ShieldAlert, gradient: 'bg-gradient-pink' },
+    { label: 'Manual Review', value: stats.manual, icon: ClipboardCheck, gradient: 'bg-gradient-orange' },
+    { label: 'Verified Safe', value: stats.approved, icon: ShieldCheck, gradient: 'bg-gradient-green' },
+  ];
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4" data-testid="kpi-tiles">
+      {tiles.map((tile) => {
+        const Icon = tile.icon;
+        return (
+          <div
+            key={tile.label}
+            className={`${tile.gradient} rounded-[var(--radius)] p-5 shadow-[var(--shadow)] transition-transform hover:-translate-y-0.5 hover:shadow-[var(--shadow-strong)]`}
+            style={{ color: 'var(--panel)' }}
+            data-testid={`kpi-${tile.label.toLowerCase().replace(/\s+/g, '-')}`}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <Icon className="w-5 h-5" style={{ color: 'var(--panel)' }} />
+            </div>
+            <div className="text-3xl font-bold tracking-tight">{tile.value}</div>
+            <div className="text-xs font-semibold opacity-80 mt-1 uppercase tracking-wider">{tile.label}</div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function Home() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -272,6 +306,7 @@ export default function Home() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<SubmissionResult | null>(null);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [history, setHistory] = useState<SubmissionResult[]>([]);
 
   const pdfInputRef = useRef<HTMLInputElement>(null);
   const imgInputRef = useRef<HTMLInputElement>(null);
@@ -329,6 +364,7 @@ export default function Home() {
       };
 
       setResult(submission);
+      setHistory((prev) => [submission, ...prev]);
       setIsAnalyzing(false);
     }, delay);
   }, [pdfFile, imageFile, imagePreviewUrl]);
@@ -376,8 +412,15 @@ export default function Home() {
     URL.revokeObjectURL(url);
   }, [result]);
 
+  const stats = {
+    total: history.length,
+    rejected: history.filter((s) => s.overall.decision === 'REJECT').length,
+    manual: history.filter((s) => s.overall.decision === 'MANUAL_REVIEW').length,
+    approved: history.filter((s) => s.overall.decision === 'APPROVE').length,
+  };
+
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', 'dark');
+    document.documentElement.removeAttribute('data-theme');
   }, []);
 
   return (
@@ -392,6 +435,15 @@ export default function Home() {
           <p className="text-base md:text-lg text-[var(--muted)] max-w-2xl mx-auto leading-relaxed" data-testid="text-hero-subtitle">
             Upload one PDF report and one evidence image. Each is verified independently in a single submission.
           </p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="mb-8"
+        >
+          <KpiTiles stats={stats} />
         </motion.div>
 
         <motion.div
