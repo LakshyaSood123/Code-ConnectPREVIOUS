@@ -480,38 +480,18 @@ export default function Home() {
             />
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '16px 0', gap: '8px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px 0', gap: '8px' }}>
             <button
               onClick={canRun && !result ? runVerification : undefined}
               disabled={!canRun || !!result}
-              className="disabled:cursor-not-allowed"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                width: '100%',
-                minWidth: '200px',
-                padding: '14px 24px',
-                fontSize: '14px',
-                fontWeight: 700,
-                letterSpacing: '0.05em',
-                textTransform: 'uppercase' as const,
-                borderRadius: 'var(--radius)',
-                border: canRun ? 'none' : '1px solid var(--border)',
-                background: canRun ? 'var(--accent)' : 'var(--panel2)',
-                color: canRun ? 'white' : 'var(--muted)',
-                boxShadow: canRun ? 'var(--shadow-strong)' : 'none',
-                opacity: 1,
-                cursor: canRun && !result ? 'pointer' : 'not-allowed',
-                transition: 'all 0.2s ease',
-              }}
+              className="btn-cta"
+              data-ready={String(canRun && !result)}
               data-testid="button-run-verification"
             >
               {isAnalyzing && <Loader2 className="w-4 h-4 animate-spin" />}
               {isAnalyzing ? 'Analyzing\u2026' : 'Run Verification'}
             </button>
-            <span className="text-xs text-[var(--muted)]" data-testid="banner-pending">
+            <span className="text-xs" style={{ color: 'var(--muted)' }} data-testid="banner-pending">
               {result
                 ? '\u00A0'
                 : pendingItems.length > 0

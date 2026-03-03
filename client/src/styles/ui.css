@@ -70,6 +70,53 @@
   transform: translateY(0);
 }
 
+.btn-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 220px;
+  min-height: 44px;
+  padding: 14px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border-radius: var(--radius);
+  position: relative;
+  z-index: 2;
+  opacity: 1 !important;
+  visibility: visible !important;
+  transition: all 0.2s ease;
+}
+
+.btn-cta[data-ready="true"] {
+  background: var(--accent);
+  color: var(--panel);
+  border: none;
+  box-shadow: var(--shadow-strong);
+  cursor: pointer;
+}
+
+.btn-cta[data-ready="true"]:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-strong);
+  filter: brightness(1.1);
+}
+
+.btn-cta[data-ready="true"]:active {
+  transform: scale(0.98);
+}
+
+.btn-cta[data-ready="false"] {
+  background: var(--panel2);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
 .btn-secondary {
   background: var(--panel2);
   color: var(--text);

@@ -1,0 +1,60 @@
+Fix the primary CTA button visibility in the Document Verification screen. Currently after selecting both files, the CTA area exists but the button is missing/blends into the background.
+
+REQUIRED CHANGES
+1) Always render a real <button> element (not an empty bar/div)
+- Text when ready: “Run Verification”
+- Text when processing: “Analyzing…”
+- Button must be centered under the two upload cards.
+
+2) Strong contrast styling (token-only)
+- Enabled state:
+  - background: var(--accent)
+  - color: var(--panel)  (white in light theme)
+  - border: none
+  - box-shadow: var(--shadow-strong)
+  - font-weight: 600
+  - min-height: 44px
+  - min-width: 220px
+  - border-radius: var(--radius)
+- Hover (enabled only):
+  - transform: translateY(-1px)
+  - box-shadow: var(--shadow-strong)
+- Active:
+  - transform: scale(0.98)
+
+- Disabled state (still visible!):
+  - background: var(--panel2)
+  - color: var(--muted)
+  - border: 1px solid var(--border)
+  - box-shadow: none
+  - opacity: 1  (IMPORTANT: do not reduce opacity)
+
+3) Remove any CSS hiding it
+Search the CTA container/button and ensure NONE of these are applied:
+- opacity: 0
+- visibility: hidden
+- display: none
+- height: 0
+- pointer-events: none (when enabled)
+Also ensure button z-index is above its container if needed:
+- position: relative; z-index: 2;
+
+4) Layout fix
+- Replace the current empty rounded rectangle bar with:
+  - a dedicated CTA row container: display:flex; justify-content:center; padding: 16px 0;
+- Put helper text below the button:
+  - If missing files: “Upload both files to continue”
+  - If ready: “Ready to verify”
+  - Use var(--muted) for helper text.
+
+5) Enable logic
+- const canRun = !!pdfFile && !!imageFile && !isProcessing
+- button disabled={!canRun}
+- When canRun becomes true, the button must appear clearly.
+
+ACCEPTANCE TEST
+- With no files: button visible but disabled.
+- With only one file: button visible but disabled.
+- With both files: button becomes enabled, clearly visible (blue).
+- Clicking: shows “Analyzing…” then results.
+No layout redesign and no new hex colors outside tokens.css.
