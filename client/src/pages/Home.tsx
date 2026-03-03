@@ -480,30 +480,34 @@ export default function Home() {
             />
           </div>
 
-          <div className="mt-4 flex flex-col items-center gap-2">
+          <div className="mt-6 flex flex-col items-center gap-3">
             {isAnalyzing ? (
               <div className="flex items-center gap-3 py-3">
                 <Loader2 className="w-5 h-5 text-[var(--accent)] animate-spin" />
                 <span className="text-sm font-semibold text-[var(--text)] tracking-wide" data-testid="text-analyzing">Analyzing...</span>
               </div>
-            ) : (
+            ) : !result ? (
               <>
                 <button
                   onClick={canRun ? runVerification : undefined}
                   disabled={!canRun}
-                  className="btn w-full md:w-auto px-10 py-3 text-sm font-semibold tracking-wide rounded-[var(--radius)] shadow-[var(--shadow)] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                  style={{ background: 'var(--accent)', color: 'var(--panel)' }}
+                  className="w-full py-3.5 text-sm font-bold tracking-wide uppercase rounded-[var(--radius)] border-none cursor-pointer transition-all disabled:cursor-not-allowed"
+                  style={{
+                    background: canRun ? 'var(--accent)' : 'var(--border)',
+                    color: canRun ? 'white' : 'var(--muted)',
+                    boxShadow: canRun ? 'var(--shadow-strong)' : 'none',
+                  }}
                   data-testid="button-run-verification"
                 >
                   Run Verification
                 </button>
-                {pendingItems.length > 0 && !result && (
+                {pendingItems.length > 0 && (
                   <span className="text-xs text-[var(--muted)]" data-testid="banner-pending">
                     Upload both files to continue
                   </span>
                 )}
               </>
-            )}
+            ) : null}
           </div>
         </motion.div>
 
@@ -664,7 +668,7 @@ function UploadSlot({
       <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] mb-3" data-testid={`${testId}-label`}>{label}</h3>
 
       {file ? (
-        <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center gap-1.5">
+        <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center gap-1.5 w-full">
           {previewUrl ? (
             <div className="w-14 h-14 rounded-lg overflow-hidden border border-[var(--border)]">
               <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
@@ -680,6 +684,19 @@ function UploadSlot({
             {file.name}
           </span>
           <span className={`text-[11px] font-semibold ${status.color}`} data-testid={`${testId}-status`}>{status.text}</span>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              triggerInput();
+            }}
+            className="inline-flex items-center gap-1 mt-1 border-none text-[11px] font-semibold rounded-[var(--radius)] transition-all hover:shadow-[var(--shadow-strong)] active:scale-[0.98]"
+            style={{ background: 'var(--accent)', color: 'white', padding: '6px 12px' }}
+            data-testid={`${testId}-button`}
+          >
+            <Upload className="w-3 h-3" />
+            Change
+          </button>
         </motion.div>
       ) : (
         <>
