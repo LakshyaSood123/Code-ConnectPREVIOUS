@@ -455,7 +455,8 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <UploadSlot
               label="PDF Report"
-              accept=".pdf"
+              buttonText="Upload PDF"
+              accept="application/pdf,.pdf"
               icon={<FileText className="w-7 h-7 text-[var(--accent)]" />}
               file={pdfFile}
               inputRef={pdfInputRef}
@@ -466,7 +467,8 @@ export default function Home() {
             />
             <UploadSlot
               label="Evidence Image"
-              accept=".jpg,.jpeg,.png"
+              buttonText="Upload Image"
+              accept="image/png,image/jpeg,image/jpg,.jpg,.jpeg,.png"
               icon={<ImageIcon className="w-7 h-7 text-[var(--accent-2)]" />}
               file={imageFile}
               previewUrl={imagePreviewUrl}
@@ -595,6 +597,7 @@ function statusLabel(file: File | null, isAnalyzing: boolean, verdict: Verdict |
 
 function UploadSlot({
   label,
+  buttonText,
   accept,
   icon,
   file,
@@ -606,6 +609,7 @@ function UploadSlot({
   testId,
 }: {
   label: string;
+  buttonText: string;
   accept: string;
   icon: JSX.Element;
   file: File | null;
@@ -629,23 +633,27 @@ function UploadSlot({
     [onSelect],
   );
 
+  const triggerInput = useCallback(() => {
+    inputRef.current?.click();
+  }, [inputRef]);
+
   return (
     <div
-      className={`file-drop-area flex flex-col items-center justify-center min-h-[130px] py-5 px-4 ${dragOver ? 'border-[var(--accent)] bg-[rgba(59,130,246,0.05)]' : ''}`}
+      className={`file-drop-area flex flex-col items-center justify-center min-h-[130px] py-5 px-4 cursor-pointer ${dragOver ? 'border-[var(--accent)] bg-[rgba(59,130,246,0.05)]' : ''}`}
       onDragOver={(e) => {
         e.preventDefault();
         setDragOver(true);
       }}
       onDragLeave={() => setDragOver(false)}
       onDrop={handleDrop}
-      onClick={() => inputRef.current?.click()}
+      onClick={triggerInput}
       data-testid={testId}
     >
       <input
         ref={inputRef as React.RefObject<HTMLInputElement>}
         type="file"
         accept={accept}
-        className="hidden"
+        style={{ position: 'absolute', width: '1px', height: '1px', opacity: 0, pointerEvents: 'none' }}
         onChange={(e) => {
           const f = e.target.files?.[0];
           if (f) onSelect(f);
@@ -676,8 +684,21 @@ function UploadSlot({
       ) : (
         <>
           {icon}
-          <p className="text-xs text-[var(--muted)] mt-2">Drag & drop or click to browse</p>
-          <span className={`text-[11px] mt-1 ${status.color}`} data-testid={`${testId}-status`}>{status.text}</span>
+          <p className="text-xs text-[var(--muted)] mt-2 mb-2">Drag & drop or click to browse</p>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              triggerInput();
+            }}
+            className="inline-flex items-center gap-1.5 border-none text-xs font-semibold rounded-[var(--radius)] transition-all hover:shadow-[var(--shadow-strong)] active:scale-[0.98]"
+            style={{ background: 'var(--accent)', color: 'white', padding: '10px 14px' }}
+            data-testid={`${testId}-button`}
+          >
+            <Upload className="w-3.5 h-3.5" />
+            {buttonText}
+          </button>
+          <span className={`text-[11px] mt-2 ${status.color}`} data-testid={`${testId}-status`}>{status.text}</span>
         </>
       )}
     </div>
