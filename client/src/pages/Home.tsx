@@ -480,18 +480,41 @@ export default function Home() {
             />
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px 0', gap: '8px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px 0', gap: '8px', position: 'relative', zIndex: 9999 }}>
             <button
               onClick={canRun && !result ? runVerification : undefined}
               disabled={!canRun || !!result}
-              className="btn-cta"
               data-ready={String(canRun && !result)}
               data-testid="button-run-verification"
+              style={{
+                background: canRun ? 'var(--accent)' : 'var(--panel2)',
+                color: canRun ? 'var(--panel)' : 'var(--muted)',
+                border: canRun ? '2px solid var(--accent)' : '2px solid var(--border)',
+                boxShadow: canRun ? 'var(--shadow-strong)' : 'var(--shadow)',
+                minHeight: '52px',
+                minWidth: '260px',
+                width: '100%',
+                fontSize: '15px',
+                fontWeight: 700,
+                opacity: 1,
+                visibility: 'visible' as const,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                position: 'relative' as const,
+                zIndex: 9999,
+                borderRadius: 'var(--radius)',
+                letterSpacing: '0.05em',
+                textTransform: 'uppercase' as const,
+                cursor: canRun && !result ? 'pointer' : 'not-allowed',
+                transition: 'all 0.2s ease',
+              }}
             >
               {isAnalyzing && <Loader2 className="w-4 h-4 animate-spin" />}
               {isAnalyzing ? 'Analyzing\u2026' : 'Run Verification'}
             </button>
-            <span className="text-xs" style={{ color: 'var(--muted)' }} data-testid="banner-pending">
+            <span style={{ fontSize: '12px', color: 'var(--muted)' }} data-testid="banner-pending">
               {result
                 ? '\u00A0'
                 : pendingItems.length > 0
