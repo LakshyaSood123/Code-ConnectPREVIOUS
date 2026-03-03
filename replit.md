@@ -2,7 +2,7 @@
 
 ## Overview
 
-Reagvis Labs Pvt. Ltd. is a frontend-only web application for PDF + Image Authenticity Verification. Users upload one PDF report and one evidence image as a single submission. Each document is verified independently with REAL/FAKE/MEDIUM verdicts determined from filename patterns. The app features an image lightbox with zoom, bounding box overlays, and output image toggle support. Results can be exported as JSON.
+Reagvis Labs Pvt. Ltd. is a frontend-only web application for Document Verification. Users upload one PDF report and one evidence image as a single submission. Each document is verified independently with REAL/FAKE/MEDIUM verdicts determined from filename patterns. The app features an image lightbox with zoom, bounding box overlays, and output image toggle support. Results can be exported as JSON.
 
 ## User Preferences
 

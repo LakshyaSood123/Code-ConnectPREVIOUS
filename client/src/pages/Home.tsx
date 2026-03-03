@@ -430,10 +430,10 @@ export default function Home() {
       <main className="max-w-[960px] mx-auto px-6 pt-12">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-10 text-center">
           <h1 className="text-4xl md:text-5xl font-bold text-[var(--text)] tracking-tight mb-3 leading-tight" data-testid="text-hero-title">
-            PDF + Image Authenticity Verification
+            Document Verification
           </h1>
           <p className="text-base md:text-lg text-[var(--muted)] max-w-2xl mx-auto leading-relaxed" data-testid="text-hero-subtitle">
-            Upload one PDF report and one evidence image. Each is verified independently in a single submission.
+            Upload and verify required documents. Each upload is checked for authenticity and document-type match.
           </p>
         </motion.div>
 
