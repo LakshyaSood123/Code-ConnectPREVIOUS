@@ -452,60 +452,57 @@ export default function Home() {
           transition={{ delay: 0.1 }}
           className="card p-6 mb-8"
         >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <UploadSlot
-              label="Upload PDF Report"
+              label="PDF Report"
               accept=".pdf"
-              icon={<FileText className="w-8 h-8 text-[var(--accent)]" />}
+              icon={<FileText className="w-7 h-7 text-[var(--accent)]" />}
               file={pdfFile}
               inputRef={pdfInputRef}
               onSelect={handlePdfSelect}
+              isAnalyzing={isAnalyzing}
+              verdict={result?.pdf.verdict ?? null}
               testId="upload-pdf"
             />
             <UploadSlot
-              label="Upload Evidence Image"
+              label="Evidence Image"
               accept=".jpg,.jpeg,.png"
-              icon={<ImageIcon className="w-8 h-8 text-[var(--accent-2)]" />}
+              icon={<ImageIcon className="w-7 h-7 text-[var(--accent-2)]" />}
               file={imageFile}
               previewUrl={imagePreviewUrl}
               inputRef={imgInputRef}
               onSelect={handleImageSelect}
+              isAnalyzing={isAnalyzing}
+              verdict={result?.image.verdict ?? null}
               testId="upload-image"
             />
           </div>
 
-          <AnimatePresence mode="wait">
-            {pendingItems.length > 0 && !result && (
-              <motion.div
-                key="pending"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="mt-5 flex items-center gap-2 px-4 py-3 rounded-lg bg-[var(--panel2)] border border-[var(--border)]"
-                data-testid="banner-pending"
-              >
-                <AlertTriangle className="w-4 h-4 text-[var(--grad-orange-start)] shrink-0" />
-                <span className="text-sm text-[var(--muted)]">
-                  Documents pending: <span className="text-[var(--text)] font-medium">{pendingItems.join(', ')}</span>
-                </span>
-              </motion.div>
+          <div className="mt-4 flex flex-col items-center gap-2">
+            {isAnalyzing ? (
+              <div className="flex items-center gap-3 py-3">
+                <Loader2 className="w-5 h-5 text-[var(--accent)] animate-spin" />
+                <span className="text-sm font-semibold text-[var(--text)] tracking-wide" data-testid="text-analyzing">Analyzing...</span>
+              </div>
+            ) : (
+              <>
+                <button
+                  onClick={canRun ? runVerification : undefined}
+                  disabled={!canRun}
+                  className="btn w-full md:w-auto px-10 py-3 text-sm font-semibold tracking-wide rounded-[var(--radius)] shadow-[var(--shadow)] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{ background: 'var(--accent)', color: 'var(--panel)' }}
+                  data-testid="button-run-verification"
+                >
+                  Run Verification
+                </button>
+                {pendingItems.length > 0 && !result && (
+                  <span className="text-xs text-[var(--muted)]" data-testid="banner-pending">
+                    Upload both files to continue
+                  </span>
+                )}
+              </>
             )}
-          </AnimatePresence>
-
-          {canRun && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-5 flex justify-center">
-              <button onClick={runVerification} className="btn btn-primary px-8 py-3 text-base" data-testid="button-run-verification">
-                Run Verification
-              </button>
-            </motion.div>
-          )}
-
-          {isAnalyzing && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-5 flex flex-col items-center gap-3 py-4">
-              <Loader2 className="w-8 h-8 text-[var(--accent)] animate-spin" />
-              <span className="text-sm font-semibold text-[var(--text)] tracking-wide" data-testid="text-analyzing">Analyzing...</span>
-            </motion.div>
-          )}
+          </div>
         </motion.div>
 
         <AnimatePresence>
@@ -587,6 +584,15 @@ export default function Home() {
   );
 }
 
+function statusLabel(file: File | null, isAnalyzing: boolean, verdict: Verdict | null): { text: string; color: string } {
+  if (!file) return { text: 'No file selected', color: 'text-[var(--muted)]' };
+  if (isAnalyzing) return { text: 'Analyzing\u2026', color: 'text-[var(--accent)]' };
+  if (verdict === 'REAL') return { text: 'Verified', color: 'text-[var(--ok)]' };
+  if (verdict === 'FAKE') return { text: 'Failed', color: 'text-[var(--danger)]' };
+  if (verdict === 'MEDIUM') return { text: 'Needs review', color: 'text-[var(--grad-orange-start)]' };
+  return { text: 'Selected', color: 'text-[var(--accent)]' };
+}
+
 function UploadSlot({
   label,
   accept,
@@ -595,6 +601,8 @@ function UploadSlot({
   previewUrl,
   inputRef,
   onSelect,
+  isAnalyzing,
+  verdict,
   testId,
 }: {
   label: string;
@@ -604,9 +612,12 @@ function UploadSlot({
   previewUrl?: string | null;
   inputRef: React.RefObject<HTMLInputElement>;
   onSelect: (file: File) => void;
+  isAnalyzing: boolean;
+  verdict: Verdict | null;
   testId: string;
 }) {
   const [dragOver, setDragOver] = useState(false);
+  const status = statusLabel(file, isAnalyzing, verdict);
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
@@ -620,7 +631,7 @@ function UploadSlot({
 
   return (
     <div
-      className={`file-drop-area flex flex-col items-center justify-center min-h-[160px] ${dragOver ? 'border-[var(--accent)] bg-[rgba(59,130,246,0.05)]' : ''}`}
+      className={`file-drop-area flex flex-col items-center justify-center min-h-[130px] py-5 px-4 ${dragOver ? 'border-[var(--accent)] bg-[rgba(59,130,246,0.05)]' : ''}`}
       onDragOver={(e) => {
         e.preventDefault();
         setDragOver(true);
@@ -642,24 +653,31 @@ function UploadSlot({
         data-testid={`${testId}-input`}
       />
 
+      <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] mb-3" data-testid={`${testId}-label`}>{label}</h3>
+
       {file ? (
-        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center gap-2">
+        <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center gap-1.5">
           {previewUrl ? (
-            <div className="w-16 h-16 rounded-lg overflow-hidden border border-[var(--border)]">
+            <div className="w-14 h-14 rounded-lg overflow-hidden border border-[var(--border)]">
               <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
             </div>
           ) : (
-            <CheckCircle2 className="w-8 h-8 text-[var(--ok)]" />
+            <FileText className="w-8 h-8 text-[var(--accent)]" />
           )}
-          <span className="text-sm font-medium text-[var(--text)] truncate max-w-[200px]">{file.name}</span>
-          <span className="text-xs text-[var(--ok)]">Ready</span>
+          <span
+            className="text-xs font-medium text-[var(--text)] overflow-hidden text-ellipsis whitespace-nowrap max-w-[180px] block"
+            title={file.name}
+            data-testid={`${testId}-filename`}
+          >
+            {file.name}
+          </span>
+          <span className={`text-[11px] font-semibold ${status.color}`} data-testid={`${testId}-status`}>{status.text}</span>
         </motion.div>
       ) : (
         <>
           {icon}
-          <h3 className="text-sm font-semibold text-[var(--text)] mt-3 mb-1">{label}</h3>
-          <p className="text-xs text-[var(--muted)]">Drag & drop or click to browse</p>
-          <p className="text-[10px] text-[var(--muted)] mt-1">Accepts: {accept}</p>
+          <p className="text-xs text-[var(--muted)] mt-2">Drag & drop or click to browse</p>
+          <span className={`text-[11px] mt-1 ${status.color}`} data-testid={`${testId}-status`}>{status.text}</span>
         </>
       )}
     </div>

@@ -1,0 +1,44 @@
+Fix the Document Verification upload UI shown in the screenshot.
+
+PROBLEMS TO FIX
+1) The bottom-center blank rounded rectangle/button looks broken/empty.
+2) The two upload cards look like “Ready” placeholders instead of a clear “Upload PDF” + “Upload Image” flow.
+3) File name truncation is ugly (“IEEE_Conference_Template__2…”), and the PDF card shows only an icon but no clear PDF indicator.
+
+REQUIRED CHANGES (minimal diff)
+A) Replace the empty blank box at the bottom with a proper primary CTA button:
+- Text: “Run Verification”
+- Disabled state if either required upload is missing.
+- When disabled: show “Upload both files to continue” as helper text (muted).
+- When clicked: triggers the existing analysis/processing delay then shows results.
+- Button style: use var(--accent) background, white text, radius var(--radius), shadow var(--shadow).
+
+B) Make the two cards clearly labeled and consistent
+Left card (PDF):
+- Title: “PDF Report”
+- Accept only .pdf
+- Show a PDF icon and the selected filename below.
+Right card (Image):
+- Title: “Evidence Image”
+- Accept JPG/PNG/JPEG
+- Show a thumbnail preview when selected.
+
+C) Improve filename display
+- Show the filename on one line with:
+  - CSS: overflow hidden, text-overflow ellipsis, max-width constrained
+- Also add a tooltip on hover showing full filename (title attribute).
+
+D) Replace “Ready” text with clearer status labels
+- Before upload: “No file selected”
+- After file selected: “Selected”
+- While processing: “Analyzing…”
+- After completion: “Verified” / “Failed” / “Needs review” (based on verdict)
+
+E) Keep layout centered but reduce excessive empty space
+- Tighten card padding and reduce the big blank area inside the container.
+- Ensure the CTA button sits directly beneath the two cards with normal spacing (16–24px).
+
+CONSTRAINTS
+- Do NOT change overall page layout outside this section.
+- No new hex colors outside tokens.css.
+- Keep current logic; only improve this UI flow and wiring.
