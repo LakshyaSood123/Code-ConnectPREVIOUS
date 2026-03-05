@@ -1,0 +1,65 @@
+Update the fake-image discrepancy callout behavior so the popup appears on hover instead of always being visible.
+
+GOAL
+For `_fake` images:
+- Keep the 4-point polygon overlay always visible
+- Hide the callout popup by default
+- Show the callout only when the user hovers over:
+  1) the polygon area
+  2) any of the dots
+  3) the image container (acceptable fallback if polygon hit-area is harder)
+
+BEHAVIOR
+1) Default state
+- Polygon + dots visible
+- Callout hidden
+
+2) Hover state
+- On mouse enter over the marked region (or image container fallback):
+  - show the callout popup
+  - slightly brighten the polygon stroke or dots for emphasis
+- On mouse leave:
+  - hide the callout
+- If user moves from polygon to the callout itself:
+  - keep the callout visible until they leave both the region and the popup
+
+3) Interaction polish
+- Callout should fade/slide in smoothly:
+  - transition duration ~150–200ms
+- Hide with a small delay (~80–120ms) to avoid flicker
+- Use pointer-events so the popup can be hovered without disappearing instantly
+
+4) Implementation approach
+- Add a local hover state, e.g.:
+  const [showCallout, setShowCallout] = useState(false)
+- Use:
+  - onMouseEnter / onMouseLeave on the polygon hit area
+  - onMouseEnter / onMouseLeave on the popup itself
+- If SVG polygon hover is difficult:
+  - create an invisible larger hit-area around the polygon
+  - OR use the whole image container as fallback
+
+5) Styling
+- Keep current professional popup style
+- Hidden state:
+  - opacity: 0
+  - transform: translateY(4px) scale(0.98)
+  - pointer-events: none
+- Visible state:
+  - opacity: 1
+  - transform: translateY(0) scale(1)
+  - pointer-events: auto
+
+6) Constraints
+- No logic changes to fake/real detection
+- No new hex colors outside tokens.css
+- Keep the rest of the modal and zoom controls unchanged
+
+ACCEPTANCE TEST
+- Upload `_fake` image:
+  - polygon visible immediately
+  - callout hidden initially
+  - hover over marked area -> callout appears
+  - move mouse away -> callout hides
+- Upload `_real` image:
+  - no overlay/callout

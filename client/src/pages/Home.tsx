@@ -181,8 +181,18 @@ function ImageLightbox({
   const [zoom, setZoom] = useState(1);
   const [showOutput, setShowOutput] = useState(false);
   const [hoveredCircle, setHoveredCircle] = useState<number | null>(null);
+  const [showCallout, setShowCallout] = useState(false);
+  const calloutTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const [imgSize, setImgSize] = useState({ w: 0, h: 0 });
+
+  const enterCallout = useCallback(() => {
+    if (calloutTimer.current) { clearTimeout(calloutTimer.current); calloutTimer.current = null; }
+    setShowCallout(true);
+  }, []);
+  const leaveCallout = useCallback(() => {
+    calloutTimer.current = setTimeout(() => setShowCallout(false), 100);
+  }, []);
 
   const handleImageLoad = () => {
     if (imgRef.current) {
@@ -397,19 +407,29 @@ function ImageLightbox({
               return (
                 <>
                   <svg
-                    className="absolute top-0 left-0 pointer-events-none"
+                    className="absolute top-0 left-0"
                     width={dW}
                     height={dH}
                     viewBox={`0 0 ${dW} ${dH}`}
-                    style={{ zIndex: 1 }}
+                    style={{ zIndex: 1, pointerEvents: 'none' }}
                     data-testid="forgery-polygon-overlay"
                   >
                     <polygon
                       points={polyStr}
                       fill="transparent"
+                      stroke="transparent"
+                      strokeWidth="20"
+                      style={{ pointerEvents: 'all', cursor: 'pointer' }}
+                      onMouseEnter={enterCallout}
+                      onMouseLeave={leaveCallout}
+                    />
+                    <polygon
+                      points={polyStr}
+                      fill="transparent"
                       stroke="var(--danger)"
-                      strokeWidth="2"
+                      strokeWidth={showCallout ? '2.5' : '2'}
                       strokeLinejoin="round"
+                      style={{ pointerEvents: 'none', transition: 'stroke-width 0.15s ease' }}
                       data-testid="forgery-polygon"
                     />
                     {pts.map((p, i) => (
@@ -417,10 +437,13 @@ function ImageLightbox({
                         key={i}
                         cx={p.x * dW}
                         cy={p.y * dH}
-                        r={3.5}
+                        r={showCallout ? 4.5 : 3.5}
                         fill="var(--danger)"
                         stroke="var(--panel)"
                         strokeWidth="1.5"
+                        style={{ pointerEvents: 'all', cursor: 'pointer', transition: 'r 0.15s ease' }}
+                        onMouseEnter={enterCallout}
+                        onMouseLeave={leaveCallout}
                         data-testid={`forgery-dot-${i}`}
                       />
                     ))}
@@ -432,16 +455,23 @@ function ImageLightbox({
                       stroke="var(--danger)"
                       strokeWidth="0.75"
                       strokeDasharray="3 2"
-                      opacity="0.7"
+                      opacity={showCallout ? 0.9 : 0}
+                      style={{ transition: 'opacity 0.18s ease', pointerEvents: 'none' }}
                     />
                   </svg>
                   <div
-                    className="absolute pointer-events-none"
+                    className="absolute"
                     style={{
                       left: calloutX,
                       top: calloutY - 72,
                       zIndex: 2,
+                      opacity: showCallout ? 1 : 0,
+                      transform: showCallout ? 'translateY(0) scale(1)' : 'translateY(4px) scale(0.98)',
+                      pointerEvents: showCallout ? 'auto' : 'none',
+                      transition: 'opacity 0.18s ease, transform 0.18s ease',
                     }}
+                    onMouseEnter={enterCallout}
+                    onMouseLeave={leaveCallout}
                     data-testid="forgery-callout"
                   >
                     <div style={{
