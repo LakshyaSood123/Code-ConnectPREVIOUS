@@ -1,0 +1,97 @@
+Improve the fake-image localization overlay UI so it looks more professional and clearer.
+
+GOAL
+Keep the 4-point polygon overlay, but redesign it to look cleaner:
+- Remove the light red filled background inside the marked shape
+- Keep a crisp outline
+- Add a professional callout / pointer label that says the AI found a discrepancy
+- Make the whole overlay look like a serious detection annotation, not a rough demo box
+
+REQUIRED CHANGES
+
+1) Polygon styling
+- Keep the 4 dots + connected lines (closed shape) for `_fake` images
+- Remove any light red / pink filled background inside the polygon
+- Polygon should be:
+  - fill: transparent
+  - stroke: var(--danger)
+  - stroke-width: 2.5px
+  - rounded joins if possible (stroke-linejoin: round)
+- Dots:
+  - small, clean, professional
+  - radius: 4–5px
+  - fill: var(--danger)
+  - add a subtle white or panel-colored outer ring if needed for contrast
+
+2) Add a professional AI callout label
+- Add one floating annotation tag near the polygon (top-right or nearest edge)
+- It should have:
+  - Title: “AI discrepancy found”
+  - Optional subtitle: “Potential manipulation region”
+- The label should connect to the polygon with a thin pointer line / leader line
+- The pointer should visually “point” to one corner or midpoint of the polygon
+
+3) Callout design
+- Make it look like a modern analysis tooltip / forensic marker:
+  - Background: var(--panel)
+  - Border: 1px solid var(--border)
+  - Text color: var(--text)
+  - Small accent strip or accent dot using var(--danger)
+  - Border radius: var(--radius)
+  - Shadow: var(--shadow)
+  - Compact padding: 8px 10px
+- Title:
+  - 12–13px, semibold
+- Subtitle:
+  - 11–12px, var(--muted)
+
+4) Pointer line
+- Draw a thin straight line from the callout to the polygon
+- Use var(--danger) or var(--border) for the pointer line
+- Keep it subtle and clean, not too thick
+- If easiest, implement using SVG line/path in the same overlay layer
+
+5) Better overlay hierarchy
+- The polygon should remain the main highlighted area
+- The callout should sit above the image but not cover important content
+- If the polygon is near the top edge, place the callout below; otherwise place it above/right automatically if practical
+- Minimal overlap with the image subject
+
+6) Hover behavior (nice to have)
+- On hover over the polygon or dots:
+  - slightly brighten the stroke
+  - reveal the callout if you want it hidden by default
+- OR keep the callout always visible for demo clarity
+
+7) Demo-only behavior
+- Apply this only for images with `_fake` in filename
+- `_real` images should show no overlay/callout
+
+8) Export / data model
+- No logic changes needed
+- Keep the same 4 points data
+- This is purely a UI rendering enhancement
+
+IMPLEMENTATION HINT
+Preferred structure:
+- Keep one SVG overlay over the image
+- Use:
+  - <polygon> for the shape
+  - <circle> for points
+  - <line> or <path> for pointer
+- Render the callout as an absolutely positioned HTML div above the image OR inside SVG as a foreignObject if easier
+- HTML div is preferred for easier styling
+
+CONSTRAINTS
+- No new hex colors outside tokens.css
+- Use existing tokens only
+- Keep the rest of the app unchanged
+
+ACCEPTANCE TEST
+- Upload a `_fake` image
+- See:
+  - clean red outlined polygon
+  - no pink/red fill inside it
+  - a neat “AI discrepancy found” callout with a pointer line
+- Upload a `_real` image
+- No overlay shown

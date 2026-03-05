@@ -379,35 +379,87 @@ function ImageLightbox({
               const dH = imgRef.current?.height || imgSize.h || 400;
               const pts = forgeryLocalization!.points;
               const polyStr = pts.map(p => `${p.x * dW},${p.y * dH}`).join(' ');
+              const topRight = pts.reduce((best, p) => (p.x + (1 - p.y) > best.x + (1 - best.y) ? p : best), pts[0]);
+              const calloutX = topRight.x * dW + 16;
+              const calloutY = topRight.y * dH - 12;
               return (
-                <svg
-                  className="absolute top-0 left-0 pointer-events-none"
-                  width={dW}
-                  height={dH}
-                  viewBox={`0 0 ${dW} ${dH}`}
-                  data-testid="forgery-polygon-overlay"
-                >
-                  <polygon
-                    points={polyStr}
-                    fill="rgba(225, 76, 76, 0.1)"
-                    stroke="var(--danger)"
-                    strokeWidth="2.5"
-                    strokeLinejoin="round"
-                    data-testid="forgery-polygon"
-                  />
-                  {pts.map((p, i) => (
-                    <circle
-                      key={i}
-                      cx={p.x * dW}
-                      cy={p.y * dH}
-                      r={5}
-                      fill="var(--danger)"
-                      stroke="var(--panel)"
-                      strokeWidth="1.5"
-                      data-testid={`forgery-dot-${i}`}
+                <>
+                  <svg
+                    className="absolute top-0 left-0 pointer-events-none"
+                    width={dW}
+                    height={dH}
+                    viewBox={`0 0 ${dW} ${dH}`}
+                    data-testid="forgery-polygon-overlay"
+                  >
+                    <polygon
+                      points={polyStr}
+                      fill="transparent"
+                      stroke="var(--danger)"
+                      strokeWidth="2.5"
+                      strokeLinejoin="round"
+                      data-testid="forgery-polygon"
                     />
-                  ))}
-                </svg>
+                    {pts.map((p, i) => (
+                      <circle
+                        key={i}
+                        cx={p.x * dW}
+                        cy={p.y * dH}
+                        r={4}
+                        fill="var(--danger)"
+                        stroke="var(--panel)"
+                        strokeWidth="1.5"
+                        data-testid={`forgery-dot-${i}`}
+                      />
+                    ))}
+                    <line
+                      x1={topRight.x * dW}
+                      y1={topRight.y * dH}
+                      x2={calloutX}
+                      y2={calloutY}
+                      stroke="var(--danger)"
+                      strokeWidth="1"
+                      strokeDasharray="4 3"
+                    />
+                  </svg>
+                  <div
+                    className="absolute pointer-events-none"
+                    style={{
+                      left: calloutX,
+                      top: calloutY - 48,
+                      zIndex: 2,
+                    }}
+                    data-testid="forgery-callout"
+                  >
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '8px',
+                      background: 'var(--panel)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius)',
+                      boxShadow: 'var(--shadow)',
+                      padding: '8px 10px',
+                      whiteSpace: 'nowrap',
+                    }}>
+                      <div style={{
+                        width: '4px',
+                        minHeight: '28px',
+                        borderRadius: '2px',
+                        background: 'var(--danger)',
+                        flexShrink: 0,
+                        marginTop: '1px',
+                      }} />
+                      <div>
+                        <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text)', lineHeight: '1.3' }}>
+                          AI discrepancy found
+                        </div>
+                        <div style={{ fontSize: '11px', color: 'var(--muted)', lineHeight: '1.3', marginTop: '2px' }}>
+                          Potential manipulation region
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </>
               );
             })()}
           </div>
@@ -728,13 +780,13 @@ export default function Home() {
                         >
                           <polygon
                             points={result.image.forgeryLocalization.points.map(p => `${p.x},${p.y}`).join(' ')}
-                            fill="rgba(225, 76, 76, 0.12)"
+                            fill="transparent"
                             stroke="var(--danger)"
                             strokeWidth="0.015"
                             strokeLinejoin="round"
                           />
                           {result.image.forgeryLocalization.points.map((p, i) => (
-                            <circle key={i} cx={p.x} cy={p.y} r={0.02} fill="var(--danger)" />
+                            <circle key={i} cx={p.x} cy={p.y} r={0.015} fill="var(--danger)" stroke="var(--panel)" strokeWidth="0.005" />
                           ))}
                         </svg>
                       )}
