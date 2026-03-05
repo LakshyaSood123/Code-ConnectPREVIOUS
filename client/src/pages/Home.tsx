@@ -639,7 +639,7 @@ export default function Home() {
             />
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px 0', gap: '8px', position: 'relative', zIndex: 9999 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px 0', gap: '8px', position: 'relative', zIndex: 1 }}>
             <button
               onClick={canRun && !result ? runVerification : undefined}
               disabled={!canRun || !!result}
@@ -662,7 +662,7 @@ export default function Home() {
                 justifyContent: 'center',
                 gap: '8px',
                 position: 'relative' as const,
-                zIndex: 9999,
+                zIndex: 1,
                 borderRadius: 'var(--radius)',
                 letterSpacing: '0.05em',
                 textTransform: 'uppercase' as const,
