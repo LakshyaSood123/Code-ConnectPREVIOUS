@@ -1,0 +1,101 @@
+Add a demo-only “forgery localization overlay” on the uploaded image preview/viewer.
+
+GOAL
+For images whose filename contains `_fake`, render an overlay on top of the image using 4 coordinate points.
+Each point should be shown as a small dot, and all 4 dots should be connected in order with straight lines to form a closed shape (polygon).
+
+SCOPE
+- Apply this only to image previews/viewers in the Document Verification flow.
+- Demo only: no backend required.
+- Do NOT change other modules/features.
+
+REQUIRED BEHAVIOR
+1) Trigger rule
+- If uploaded image filename (case-insensitive) contains `_fake`:
+  - attach a demo overlay with 4 points
+- If filename does NOT contain `_fake`:
+  - show no overlay
+
+2) Demo coordinates
+Use 4 points in normalized relative coordinates (0..1), for example:
+const demoPoints = [
+  { x: 0.28, y: 0.22 },
+  { x: 0.62, y: 0.26 },
+  { x: 0.58, y: 0.62 },
+  { x: 0.24, y: 0.56 }
+];
+
+- Store these as the “localization points” for fake images.
+- You may vary them slightly per file if desired, but keep exactly 4 points.
+
+3) Overlay rendering
+- Render the image inside a relative-positioned container.
+- Add an overlay layer above it (absolute positioned).
+- On the overlay:
+  - draw a small dot at each of the 4 points
+  - connect point1→point2→point3→point4→point1 using straight lines
+- This should create one closed quadrilateral shape.
+
+4) Implementation approach
+Preferred: use SVG overlay
+- Place an <svg> absolutely on top of the image, width/height 100%
+- Convert normalized points to percentage coordinates
+- Draw:
+  - one <polygon> using the 4 points
+  - 4 small <circle> elements at each point
+
+Example structure:
+<svg className="overlay">
+  <polygon points="..." />
+  <circle ... />
+  <circle ... />
+  <circle ... />
+  <circle ... />
+</svg>
+
+5) Styling (token-only)
+- Use existing token palette only
+- Polygon stroke: var(--danger)
+- Polygon fill: transparent (or very subtle transparent effect if already supported)
+- Dot fill: var(--danger)
+- Stroke width: 2–3px
+- Dots radius: 4–6px
+- Optional subtle glow using existing shadows only if possible
+- No new hex colors outside tokens.css
+
+6) Viewer behavior
+- Show this overlay in:
+  - the main enlarged image modal/lightbox
+  - and optionally in the smaller preview thumbnail (if it still looks clean)
+- Overlay must scale correctly with the image size.
+- Clicking outside closes the modal as before.
+
+7) Data model
+For fake images, attach:
+imageResult.localization = {
+  points: [
+    { x: number, y: number },
+    { x: number, y: number },
+    { x: number, y: number },
+    { x: number, y: number }
+  ]
+}
+
+For real images:
+imageResult.localization = null
+
+8) Export report
+Include these points in export JSON for fake images:
+image: {
+  ...,
+  localization: {
+    points: [...]
+  }
+}
+
+ACCEPTANCE TEST
+- Upload image named: passport_fake.jpg
+  -> image viewer shows 4 red dots connected with straight lines in a closed shape
+- Upload image named: passport_real.jpg
+  -> no overlay shown
+- Overlay stays aligned when image is resized in the modal

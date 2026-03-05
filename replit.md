@@ -29,14 +29,21 @@ Preferred communication style: Simple, everyday language.
 - Filename-based verdict determination (`_fake` => FAKE, `_real` => REAL, else MEDIUM)
 - Image lightbox with zoom in/out
 - Bounding box overlay support (triggered by `bbox` in filename)
-- Imperfection localization circles overlay (triggered by `bbox` or `circles` in filename + FAKE verdict)
+- Imperfection localization circles overlay (triggered by `bbox` or `circles` in filename + `_fake` in filename)
   - Renders red SVG circles at relative 0..1 coordinates over the image
   - Circle format: `{cx, cy, r, label, severity}` with severity levels: low/medium/high
   - Hover tooltips show label text; stroke width and fill opacity vary by severity
   - Circles scale correctly with zoom (SVG positioned inside the zoom transform container)
   - Uses `var(--danger)` for border/stroke color only — no new hex colors
+- Forgery localization polygon overlay (triggered by `_fake` in image filename, case-insensitive)
+  - Renders 4 red dots connected by straight lines forming a closed quadrilateral
+  - Uses normalized 0..1 coordinates stored as `ForgeryLocalization { points: {x, y}[] }`
+  - Shown in both the lightbox (scales with zoom) and the thumbnail preview
+  - Styling: polygon stroke = `var(--danger)`, dot fill = `var(--danger)`, subtle red fill
+  - Real images (`_real` or no `_fake`): no overlay, localization = null
+  - Included in JSON export as `image.localization.points` for fake images
 - Output image toggle support (triggered by `outimg` in filename)
-- JSON export of verification results
+- JSON export of verification results (includes localization points for fake images)
 - Overall decision: APPROVE/REJECT/MANUAL_REVIEW based on individual verdicts
 
 ### Theming System

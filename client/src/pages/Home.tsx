@@ -39,6 +39,15 @@ interface ImperfectionCircle {
   severity: 'low' | 'medium' | 'high';
 }
 
+interface LocalizationPoint {
+  x: number;
+  y: number;
+}
+
+interface ForgeryLocalization {
+  points: LocalizationPoint[];
+}
+
 interface FileVerdict {
   fileName: string;
   verdict: Verdict;
@@ -53,6 +62,7 @@ interface SubmissionResult {
     outputImageUrl?: string;
     boundingBoxes?: BoundingBox[];
     circles?: ImperfectionCircle[];
+    forgeryLocalization?: ForgeryLocalization | null;
   };
   overall: {
     decision: OverallDecision;
@@ -63,6 +73,7 @@ interface SubmissionResult {
     hasOutputImage: boolean;
     boundingBoxes?: BoundingBox[];
     circles?: ImperfectionCircle[];
+    forgeryLocalization?: ForgeryLocalization | null;
   };
 }
 
@@ -108,6 +119,17 @@ function getSampleCircles(): ImperfectionCircle[] {
   ];
 }
 
+function getDemoForgeryPoints(): ForgeryLocalization {
+  return {
+    points: [
+      { x: 0.28, y: 0.22 },
+      { x: 0.62, y: 0.26 },
+      { x: 0.58, y: 0.62 },
+      { x: 0.24, y: 0.56 },
+    ],
+  };
+}
+
 function DecisionPill({ decision, riskLevel }: { decision: OverallDecision; riskLevel: string }) {
   const cls =
     decision === 'REJECT'
@@ -146,12 +168,14 @@ function ImageLightbox({
   outputImageUrl,
   boundingBoxes,
   circles,
+  forgeryLocalization,
   onClose,
 }: {
   imageUrl: string;
   outputImageUrl?: string;
   boundingBoxes?: BoundingBox[];
   circles?: ImperfectionCircle[];
+  forgeryLocalization?: ForgeryLocalization | null;
   onClose: () => void;
 }) {
   const [zoom, setZoom] = useState(1);
@@ -169,6 +193,7 @@ function ImageLightbox({
   const currentSrc = showOutput && outputImageUrl ? outputImageUrl : imageUrl;
   const showBoxes = !showOutput && boundingBoxes && boundingBoxes.length > 0;
   const showCircles = !showOutput && circles && circles.length > 0;
+  const showPolygon = !showOutput && forgeryLocalization && forgeryLocalization.points.length > 0;
 
   return (
     <motion.div
@@ -349,6 +374,42 @@ function ImageLightbox({
                 })}
               </svg>
             )}
+            {showPolygon && (() => {
+              const dW = imgRef.current?.width || imgSize.w || 400;
+              const dH = imgRef.current?.height || imgSize.h || 400;
+              const pts = forgeryLocalization!.points;
+              const polyStr = pts.map(p => `${p.x * dW},${p.y * dH}`).join(' ');
+              return (
+                <svg
+                  className="absolute top-0 left-0 pointer-events-none"
+                  width={dW}
+                  height={dH}
+                  viewBox={`0 0 ${dW} ${dH}`}
+                  data-testid="forgery-polygon-overlay"
+                >
+                  <polygon
+                    points={polyStr}
+                    fill="rgba(225, 76, 76, 0.1)"
+                    stroke="var(--danger)"
+                    strokeWidth="2.5"
+                    strokeLinejoin="round"
+                    data-testid="forgery-polygon"
+                  />
+                  {pts.map((p, i) => (
+                    <circle
+                      key={i}
+                      cx={p.x * dW}
+                      cy={p.y * dH}
+                      r={5}
+                      fill="var(--danger)"
+                      stroke="var(--panel)"
+                      strokeWidth="1.5"
+                      data-testid={`forgery-dot-${i}`}
+                    />
+                  ))}
+                </svg>
+              );
+            })()}
           </div>
         </div>
       </motion.div>
@@ -431,9 +492,11 @@ export default function Home() {
       const hasBbox = imgLower.includes('bbox');
       const hasCircles = imgLower.includes('bbox') || imgLower.includes('circles');
       const hasOutimg = imgLower.includes('outimg');
+      const hasFakeInName = imgLower.includes('_fake');
 
       const boundingBoxes = hasBbox ? getSampleBoundingBoxes() : undefined;
-      const circles = (hasCircles && imgResult.verdict === 'FAKE') ? getSampleCircles() : undefined;
+      const circles = (hasCircles && hasFakeInName) ? getSampleCircles() : undefined;
+      const forgeryLocalization = hasFakeInName ? getDemoForgeryPoints() : null;
       const outputImageUrl = hasOutimg ? imagePreviewUrl : undefined;
 
       const submission: SubmissionResult = {
@@ -445,12 +508,14 @@ export default function Home() {
           outputImageUrl,
           boundingBoxes,
           circles,
+          forgeryLocalization,
         },
         overall,
         localization: {
           hasOutputImage: !!outputImageUrl,
           boundingBoxes,
           circles,
+          forgeryLocalization,
         },
       };
 
@@ -483,7 +548,10 @@ export default function Home() {
         fileName: result.image.fileName,
         verdict: result.image.verdict,
         riskScore: result.image.riskScore,
-        localization: {
+        localization: result.image.forgeryLocalization
+          ? { points: result.image.forgeryLocalization.points }
+          : null,
+        overlays: {
           hasOutputImage: result.localization.hasOutputImage,
           boundingBoxes: result.localization.boundingBoxes,
         },
@@ -647,8 +715,29 @@ export default function Home() {
                   data-testid="tile-image"
                 >
                   {imagePreviewUrl ? (
-                    <div className="w-16 h-16 rounded-lg overflow-hidden mb-2 border border-[var(--border)]">
+                    <div className="w-16 h-16 rounded-lg overflow-hidden mb-2 border border-[var(--border)]" style={{ position: 'relative' }}>
                       <img src={imagePreviewUrl} alt="Evidence" className="w-full h-full object-cover" data-testid="img-thumbnail" />
+                      {result.image.forgeryLocalization && (
+                        <svg
+                          className="absolute top-0 left-0 pointer-events-none"
+                          width="100%"
+                          height="100%"
+                          viewBox="0 0 1 1"
+                          preserveAspectRatio="none"
+                          data-testid="thumbnail-polygon-overlay"
+                        >
+                          <polygon
+                            points={result.image.forgeryLocalization.points.map(p => `${p.x},${p.y}`).join(' ')}
+                            fill="rgba(225, 76, 76, 0.12)"
+                            stroke="var(--danger)"
+                            strokeWidth="0.015"
+                            strokeLinejoin="round"
+                          />
+                          {result.image.forgeryLocalization.points.map((p, i) => (
+                            <circle key={i} cx={p.x} cy={p.y} r={0.02} fill="var(--danger)" />
+                          ))}
+                        </svg>
+                      )}
                     </div>
                   ) : (
                     <ImageIcon className="w-10 h-10 text-[var(--accent-2)] mb-2" />
@@ -687,6 +776,7 @@ export default function Home() {
             outputImageUrl={result.image.outputImageUrl}
             boundingBoxes={result.image.boundingBoxes}
             circles={result.image.circles}
+            forgeryLocalization={result.image.forgeryLocalization}
             onClose={() => setLightboxOpen(false)}
           />
         )}
