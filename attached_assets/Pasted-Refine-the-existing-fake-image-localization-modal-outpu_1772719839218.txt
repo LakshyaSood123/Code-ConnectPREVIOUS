@@ -1,0 +1,95 @@
+Refine the existing fake-image localization modal/output (the 4-point polygon overlay + callout) to look more professional and “forensic,” without changing the underlying logic.
+
+GOAL
+Keep the current working behavior:
+- `_fake` image => 4-point overlay appears
+- Callout appears with “AI discrepancy found”
+- Zoom controls remain
+But improve the visual quality and clarity.
+
+REQUIRED UI IMPROVEMENTS
+
+1) Move the callout slightly away from the image edge
+- Reposition the callout so it has more breathing room from the top-right edge of the image.
+- Keep the pointer line connected to the polygon, but make the line cleaner/thinner.
+- Ensure the callout does not feel cramped or overlap the image too tightly.
+
+2) Make the polygon overlay more professional
+- Keep the 4-point shape, but refine its styling:
+  - No background fill inside the polygon
+  - Slightly thinner stroke than now
+  - Dots slightly smaller and cleaner
+  - Use rounded line joins if possible
+- Keep color using existing token status color (danger) only.
+
+3) Add richer forensic callout content
+Update the callout content to:
+- Title: “AI discrepancy found”
+- Subtitle line: “Potential manipulation region”
+- Add a small metadata section inside the same callout:
+  - “Type: Identity/text inconsistency”
+  - “Confidence: 92%”
+  - “Review recommended”
+This is demo-only hardcoded content for `_fake` images.
+
+4) Improve callout styling
+- Keep it as a premium floating card:
+  - Background: var(--panel)
+  - Border: 1px solid var(--border)
+  - Radius: var(--radius)
+  - Shadow: var(--shadow)
+  - Padding: compact but clean
+- Title slightly bolder
+- Secondary lines smaller and muted
+- Add a small left accent bar or small red indicator dot using var(--danger)
+
+5) Slightly dim the image outside the flagged region
+- Add a subtle dark overlay over the image EXCEPT the detected polygon area should remain the visual focus.
+- This effect should be subtle, not dramatic.
+- If clipping outside the polygon is too complex, use a simpler approximation:
+  - add a mild translucent dark veil over the full image and keep the polygon/callout bright and prominent
+- The goal is to visually emphasize the detected region.
+
+6) Improve the top-right zoom/close controls
+- Keep the same 3 controls
+- Make them feel more aligned with the app style:
+  - Slightly smaller
+  - Cleaner spacing
+  - Use panel/panel2 backgrounds with border and shadow
+  - Better hover states using existing tokens
+- Do not change their functionality.
+
+7) Add a footer caption inside the modal
+- At the bottom of the modal (below the image), add a small informational line:
+  “Flagged region detected in uploaded document. Review recommended before approval.”
+- Style:
+  - Small text
+  - Muted color
+  - Centered or left aligned depending on current modal layout
+
+IMPLEMENTATION NOTES
+- Keep the same fake-image trigger logic (`_fake` filename).
+- Keep the same 4 coordinate points logic.
+- This is purely a UI refinement, not a logic rewrite.
+- If you are using SVG overlay:
+  - Keep using <polygon> + <circle> + pointer line
+- If the callout is HTML:
+  - Continue with absolutely positioned div for easier styling
+
+CONSTRAINTS
+- No new hex colors outside tokens.css
+- Use only existing palette tokens
+- No changes to core verification logic
+- Keep current modal/lightbox behavior intact
+
+ACCEPTANCE TEST
+- Upload a `_fake` image
+- Modal shows:
+  - refined polygon with cleaner dots/lines
+  - slightly separated callout
+  - callout includes type + confidence + review note
+  - image background subtly deemphasized outside the main region
+  - improved control buttons
+  - footer caption visible
+- Upload a `_real` image
+  - no overlay/callout shown

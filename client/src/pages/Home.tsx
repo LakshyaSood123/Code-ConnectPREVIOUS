@@ -212,19 +212,19 @@ function ImageLightbox({
         className="relative max-w-[90vw] max-h-[90vh] flex flex-col items-center"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="absolute -top-12 right-0 flex items-center gap-2 z-10">
+        <div className="absolute -top-10 right-0 flex items-center gap-1.5 z-10">
           {outputImageUrl && (
-            <div className="flex bg-[var(--panel)] rounded-lg border border-[var(--border)] overflow-hidden mr-2" data-testid="toggle-output-image">
+            <div className="flex bg-[var(--panel2)] rounded-md border border-[var(--border)] overflow-hidden mr-1.5" style={{ boxShadow: 'var(--shadow)' }} data-testid="toggle-output-image">
               <button
                 onClick={() => setShowOutput(false)}
-                className={`px-3 py-1.5 text-xs font-semibold transition-colors ${!showOutput ? 'bg-[var(--accent)] text-white' : 'text-[var(--muted)] hover:text-[var(--text)]'}`}
+                className={`px-2.5 py-1 text-[10px] font-semibold tracking-wide uppercase transition-colors ${!showOutput ? 'bg-[var(--accent)] text-white' : 'text-[var(--muted)] hover:text-[var(--text)]'}`}
                 data-testid="button-original"
               >
                 Original
               </button>
               <button
                 onClick={() => setShowOutput(true)}
-                className={`px-3 py-1.5 text-xs font-semibold transition-colors ${showOutput ? 'bg-[var(--accent)] text-white' : 'text-[var(--muted)] hover:text-[var(--text)]'}`}
+                className={`px-2.5 py-1 text-[10px] font-semibold tracking-wide uppercase transition-colors ${showOutput ? 'bg-[var(--accent)] text-white' : 'text-[var(--muted)] hover:text-[var(--text)]'}`}
                 data-testid="button-model-output"
               >
                 Model Output
@@ -233,28 +233,31 @@ function ImageLightbox({
           )}
           <button
             onClick={() => setZoom((z) => Math.min(z + 0.25, 3))}
-            className="w-8 h-8 rounded-full bg-[var(--panel)] border border-[var(--border)] flex items-center justify-center hover:border-[var(--accent)] transition-colors"
+            className="w-7 h-7 rounded-md bg-[var(--panel2)] border border-[var(--border)] flex items-center justify-center hover:border-[var(--accent)] hover:bg-[var(--panel)] transition-all"
+            style={{ boxShadow: 'var(--shadow)' }}
             data-testid="button-zoom-in"
           >
-            <ZoomIn className="w-4 h-4 text-[var(--text)]" />
+            <ZoomIn className="w-3.5 h-3.5 text-[var(--text)]" />
           </button>
           <button
             onClick={() => setZoom((z) => Math.max(z - 0.25, 0.5))}
-            className="w-8 h-8 rounded-full bg-[var(--panel)] border border-[var(--border)] flex items-center justify-center hover:border-[var(--accent)] transition-colors"
+            className="w-7 h-7 rounded-md bg-[var(--panel2)] border border-[var(--border)] flex items-center justify-center hover:border-[var(--accent)] hover:bg-[var(--panel)] transition-all"
+            style={{ boxShadow: 'var(--shadow)' }}
             data-testid="button-zoom-out"
           >
-            <ZoomOut className="w-4 h-4 text-[var(--text)]" />
+            <ZoomOut className="w-3.5 h-3.5 text-[var(--text)]" />
           </button>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-[var(--panel)] border border-[var(--border)] flex items-center justify-center hover:border-[var(--danger)] transition-colors"
+            className="w-7 h-7 rounded-md bg-[var(--panel2)] border border-[var(--border)] flex items-center justify-center hover:border-[var(--danger)] hover:bg-[var(--panel)] transition-all"
+            style={{ boxShadow: 'var(--shadow)' }}
             data-testid="button-close-lightbox"
           >
-            <X className="w-4 h-4 text-[var(--text)]" />
+            <X className="w-3.5 h-3.5 text-[var(--text)]" />
           </button>
         </div>
 
-        <div className="overflow-auto max-w-[85vw] max-h-[80vh] rounded-xl border border-[var(--border)]">
+        <div className="overflow-auto max-w-[85vw] max-h-[75vh] rounded-xl border border-[var(--border)]">
           <div style={{ transform: `scale(${zoom})`, transformOrigin: 'top left', transition: 'transform 0.2s ease', position: 'relative', display: 'inline-block' }}>
             <img
               ref={imgRef}
@@ -262,9 +265,16 @@ function ImageLightbox({
               onLoad={handleImageLoad}
               alt="Evidence"
               className="block max-w-none"
-              style={{ maxWidth: '85vw', maxHeight: '80vh', objectFit: 'contain' }}
+              style={{ maxWidth: '85vw', maxHeight: '75vh', objectFit: 'contain' }}
               data-testid="lightbox-image"
             />
+            {showPolygon && (
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{ background: 'rgba(0,0,0,0.18)' }}
+                data-testid="forgery-dimmer"
+              />
+            )}
             {showBoxes && imgSize.w > 0 && (
               <svg
                 className="absolute top-0 left-0 pointer-events-none"
@@ -380,8 +390,10 @@ function ImageLightbox({
               const pts = forgeryLocalization!.points;
               const polyStr = pts.map(p => `${p.x * dW},${p.y * dH}`).join(' ');
               const topRight = pts.reduce((best, p) => (p.x + (1 - p.y) > best.x + (1 - best.y) ? p : best), pts[0]);
-              const calloutX = topRight.x * dW + 16;
-              const calloutY = topRight.y * dH - 12;
+              const anchorX = topRight.x * dW;
+              const anchorY = topRight.y * dH;
+              const calloutX = anchorX + 28;
+              const calloutY = Math.max(anchorY - 40, 8);
               return (
                 <>
                   <svg
@@ -389,13 +401,14 @@ function ImageLightbox({
                     width={dW}
                     height={dH}
                     viewBox={`0 0 ${dW} ${dH}`}
+                    style={{ zIndex: 1 }}
                     data-testid="forgery-polygon-overlay"
                   >
                     <polygon
                       points={polyStr}
                       fill="transparent"
                       stroke="var(--danger)"
-                      strokeWidth="2.5"
+                      strokeWidth="2"
                       strokeLinejoin="round"
                       data-testid="forgery-polygon"
                     />
@@ -404,7 +417,7 @@ function ImageLightbox({
                         key={i}
                         cx={p.x * dW}
                         cy={p.y * dH}
-                        r={4}
+                        r={3.5}
                         fill="var(--danger)"
                         stroke="var(--panel)"
                         strokeWidth="1.5"
@@ -412,49 +425,57 @@ function ImageLightbox({
                       />
                     ))}
                     <line
-                      x1={topRight.x * dW}
-                      y1={topRight.y * dH}
+                      x1={anchorX}
+                      y1={anchorY}
                       x2={calloutX}
-                      y2={calloutY}
+                      y2={calloutY + 40}
                       stroke="var(--danger)"
-                      strokeWidth="1"
-                      strokeDasharray="4 3"
+                      strokeWidth="0.75"
+                      strokeDasharray="3 2"
+                      opacity="0.7"
                     />
                   </svg>
                   <div
                     className="absolute pointer-events-none"
                     style={{
                       left: calloutX,
-                      top: calloutY - 48,
+                      top: calloutY - 72,
                       zIndex: 2,
                     }}
                     data-testid="forgery-callout"
                   >
                     <div style={{
                       display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: '8px',
+                      alignItems: 'stretch',
                       background: 'var(--panel)',
                       border: '1px solid var(--border)',
                       borderRadius: 'var(--radius)',
                       boxShadow: 'var(--shadow)',
-                      padding: '8px 10px',
+                      overflow: 'hidden',
                       whiteSpace: 'nowrap',
                     }}>
                       <div style={{
-                        width: '4px',
-                        minHeight: '28px',
-                        borderRadius: '2px',
+                        width: '3px',
                         background: 'var(--danger)',
                         flexShrink: 0,
-                        marginTop: '1px',
                       }} />
-                      <div>
-                        <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text)', lineHeight: '1.3' }}>
+                      <div style={{ padding: '8px 12px' }}>
+                        <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)', lineHeight: '1.3', letterSpacing: '0.01em' }}>
                           AI discrepancy found
                         </div>
-                        <div style={{ fontSize: '11px', color: 'var(--muted)', lineHeight: '1.3', marginTop: '2px' }}>
+                        <div style={{ fontSize: '11px', color: 'var(--muted)', lineHeight: '1.4', marginTop: '3px' }}>
                           Potential manipulation region
+                        </div>
+                        <div style={{ borderTop: '1px solid var(--border)', marginTop: '6px', paddingTop: '5px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <div style={{ fontSize: '10px', color: 'var(--muted)', lineHeight: '1.4' }}>
+                            <span style={{ color: 'var(--text)', fontWeight: 500 }}>Type:</span> Identity/text inconsistency
+                          </div>
+                          <div style={{ fontSize: '10px', color: 'var(--muted)', lineHeight: '1.4' }}>
+                            <span style={{ color: 'var(--text)', fontWeight: 500 }}>Confidence:</span> 92%
+                          </div>
+                          <div style={{ fontSize: '10px', color: 'var(--danger)', fontWeight: 600, lineHeight: '1.4', marginTop: '1px' }}>
+                            Review recommended
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -464,6 +485,22 @@ function ImageLightbox({
             })()}
           </div>
         </div>
+
+        {showPolygon && (
+          <div
+            style={{
+              textAlign: 'center',
+              padding: '8px 16px',
+              marginTop: '6px',
+              fontSize: '11px',
+              color: 'var(--muted)',
+              letterSpacing: '0.01em',
+            }}
+            data-testid="lightbox-footer-caption"
+          >
+            Flagged region detected in uploaded document. Review recommended before approval.
+          </div>
+        )}
       </motion.div>
     </motion.div>
   );
