@@ -1045,6 +1045,119 @@ function CorrelationRow({ item }: { item: CorrelationItem }) {
   );
 }
 
+function getCorrelationSentence(item: CorrelationItem): string {
+  const ok = item.status === 'matched';
+  switch (item.field) {
+    case 'Patient Name':
+      return ok
+        ? 'Patient identity is aligned across all uploaded documents.'
+        : 'Patient name mismatch detected across uploaded documents.';
+    case 'Procedure':
+      return ok
+        ? 'Procedure is consistent between the diagnostic report and claim bill.'
+        : `Procedure mismatch detected: report indicates ${item.sourceA} while bill claims ${item.sourceB}.`;
+    case 'Hospital / Provider':
+      return ok
+        ? 'Hospital or provider names are consistent across documents.'
+        : 'Hospital or provider names differ between diagnostic report and claim bill.';
+    case 'Document Date':
+      return ok
+        ? 'Timeline of report and billing is consistent.'
+        : `Date inconsistency: report dated ${item.sourceA}, bill dated ${item.sourceB}.`;
+    case 'Diagnostic Image Consistency':
+      return ok
+        ? 'Diagnostic image type matches the reported procedure type.'
+        : `Diagnostic image suggests ${(item.sourceB ?? '').replace(' detected', '')} while report indicates ${(item.sourceA ?? '').replace(' expected', '')}.`;
+    default:
+      return ok ? `${item.field} is consistent.` : `${item.field} shows inconsistency.`;
+  }
+}
+
+function getObservedValue(item: CorrelationItem): string {
+  if (item.field === 'Patient Name' && item.status === 'matched' && item.sourceA) {
+    return `${item.sourceA} across Aadhaar, report, and bill`;
+  }
+  const parts = [
+    item.labelA && item.sourceA ? `${item.labelA}: ${item.sourceA}` : '',
+    item.labelB && item.sourceB ? `${item.labelB}: ${item.sourceB}` : '',
+    item.labelC && item.sourceC ? `${item.labelC}: ${item.sourceC}` : '',
+  ].filter(Boolean);
+  return parts.join(' | ');
+}
+
+function DocEvidenceCard({
+  delay,
+  iconBg,
+  iconColor,
+  icon,
+  title,
+  subtitle,
+  fields,
+  statusLabel,
+  statusOk,
+  statusText,
+  statusSubtext,
+}: {
+  delay: number;
+  iconBg: string;
+  iconColor: string;
+  icon: React.ReactNode;
+  title: string;
+  subtitle: string;
+  fields: { label: string; value: string }[];
+  statusLabel: string;
+  statusOk: boolean;
+  statusText: string;
+  statusSubtext: string;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, type: 'spring', stiffness: 220, damping: 22 }}
+      className="card p-4 flex flex-col gap-2.5"
+    >
+      <div className="flex items-start gap-2.5 pb-2.5 border-b border-[var(--border)]">
+        <div
+          className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+          style={{ background: iconBg, color: iconColor }}
+        >
+          {icon}
+        </div>
+        <div>
+          <div className="text-[13px] font-bold text-[var(--text)] leading-tight">{title}</div>
+          <div className="text-[10px] text-[var(--muted)] mt-0.5 leading-snug">{subtitle}</div>
+        </div>
+      </div>
+      {fields.map((f) => (
+        <div key={f.label} className="rounded-lg px-3 py-2.5" style={{ background: 'var(--panel2)' }}>
+          <div className="text-[9px] font-bold uppercase tracking-[0.13em] text-[var(--muted)] mb-1">{f.label}</div>
+          <div className="text-[13px] font-bold text-[var(--text)] leading-snug">{f.value}</div>
+        </div>
+      ))}
+      <div className="rounded-lg px-3 py-2.5" style={{ background: 'var(--panel2)' }}>
+        <div className="flex items-center justify-between gap-2 mb-1.5">
+          <div className="text-[9px] font-bold uppercase tracking-[0.13em] text-[var(--muted)]">{statusLabel}</div>
+          <span
+            className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider flex-shrink-0"
+            style={{
+              background: statusOk ? 'rgba(39,176,107,0.12)' : 'rgba(225,76,76,0.1)',
+              color: statusOk ? 'var(--ok)' : 'var(--danger)',
+              border: `1.5px solid ${statusOk ? 'rgba(39,176,107,0.28)' : 'rgba(225,76,76,0.24)'}`,
+            }}
+          >
+            {statusText}
+          </span>
+        </div>
+        <div className="text-[13px] font-bold text-[var(--text)] leading-snug">
+          {statusOk ? 'Looks consistent' : 'Does not match'}
+        </div>
+        <div className="text-[10px] text-[var(--muted)] mt-0.5 leading-snug">{statusSubtext}</div>
+      </div>
+    </motion.div>
+  );
+}
+
 export default function Home() {
   const [aadhaarFile, setAadhaarFile] = useState<File | null>(null);
   const [reportFile, setReportFile] = useState<File | null>(null);
@@ -1494,166 +1607,230 @@ export default function Home() {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
+              transition={{ type: 'spring', stiffness: 200, damping: 26 }}
               className="flex flex-col gap-5"
               data-testid="card-result"
             >
-              <div className="card p-6">
-                <div className="flex items-start justify-between mb-1">
+              {/* ── Main result card ── */}
+              <div className="card p-7">
+                {/* Header: title left + verdict chip right */}
+                <div className="flex items-start justify-between gap-6 mb-6">
                   <div>
-                    <div className="text-[10px] font-mono text-[var(--muted)] mb-1" data-testid="result-id">{result.id}</div>
-                    <h2 className="text-xl font-bold text-[var(--text)]">Fraud Verification Result</h2>
+                    <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--muted)] mb-2">Final Result</div>
+                    <h2 className="text-3xl font-bold text-[var(--text)] mb-2 leading-tight">Overall Verdict</h2>
+                    <p className="text-sm text-[var(--muted)] max-w-md leading-relaxed">
+                      Rule-based frontend demo using deterministic filename heuristics and cross-document checks.
+                    </p>
+                    <div className="text-[10px] font-mono text-[var(--muted)] mt-3 opacity-50" data-testid="result-id">{result.id}</div>
                   </div>
-                  <div className="flex gap-2">
-                    <button onClick={handleExport} className="btn btn-secondary text-xs px-3 py-2" data-testid="button-export">
-                      <Download className="w-3.5 h-3.5" />
-                      Export JSON
-                    </button>
-                    <button onClick={handleReset} className="btn btn-ghost text-xs px-3 py-2" data-testid="button-new-submission">
-                      New Submission
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-4 mt-5">
-                  <div
-                    className="flex-1 rounded-xl p-5 flex flex-col gap-2"
+                  <motion.div
+                    initial={{ scale: 0.82, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 24, delay: 0.14 }}
+                    className="rounded-2xl px-6 py-5 flex-shrink-0"
                     style={{
                       background: result.verdict === 'High Fraud Risk'
-                        ? 'rgba(225,76,76,0.07)'
+                        ? 'linear-gradient(140deg, #e14c4c 0%, #c73232 100%)'
                         : result.verdict === 'Needs Manual Review'
-                          ? 'rgba(255,154,85,0.07)'
-                          : 'rgba(39,176,107,0.07)',
-                      border: `1.5px solid ${result.verdict === 'High Fraud Risk' ? 'rgba(225,76,76,0.2)' : result.verdict === 'Needs Manual Review' ? 'rgba(255,154,85,0.25)' : 'rgba(39,176,107,0.2)'}`,
+                          ? 'linear-gradient(140deg, #ff9a55 0%, #e07a1c 100%)'
+                          : 'linear-gradient(140deg, #27b06b 0%, #1a9458 100%)',
+                      minWidth: '210px',
                     }}
                     data-testid="overall-verdict-card"
                   >
-                    <div className="flex items-center gap-2">
-                      {result.verdict === 'High Fraud Risk'
-                        ? <XCircle className="w-5 h-5 text-[var(--danger)]" />
-                        : result.verdict === 'Needs Manual Review'
-                          ? <AlertTriangle className="w-5 h-5 text-[var(--grad-orange-start)]" />
-                          : <CheckCircle2 className="w-5 h-5 text-[var(--ok)]" />}
-                      <span
-                        className="text-base font-bold"
-                        style={{
-                          color: result.verdict === 'High Fraud Risk' ? 'var(--danger)' : result.verdict === 'Needs Manual Review' ? 'var(--grad-orange-start)' : 'var(--ok)',
-                        }}
-                        data-testid="text-overall-verdict"
-                      >
-                        {result.verdict}
-                      </span>
+                    <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/70 mb-1">Verdict</div>
+                    <div className="text-xl font-bold text-white leading-tight mb-2" data-testid="text-overall-verdict">{result.verdict}</div>
+                    <div className="text-sm text-white/80">
+                      Risk Score: <span className="font-bold" data-testid="text-risk-score"><AnimatedNumber value={result.riskScore} /></span>/100
                     </div>
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="text-4xl font-bold text-[var(--text)]" data-testid="text-risk-score">
-                        <AnimatedNumber value={result.riskScore} />
-                      </span>
-                      <span className="text-sm text-[var(--muted)] font-medium">/ 100 Risk Score</span>
-                    </div>
-                    <div className="w-full bg-[var(--panel2)] rounded-full h-2 mt-1 overflow-hidden">
+                    <div className="mt-2.5 w-full bg-white/20 rounded-full h-1.5 overflow-hidden">
                       <motion.div
-                        className="h-2 rounded-full"
+                        className="h-1.5 rounded-full bg-white/80"
                         initial={{ width: '0%' }}
                         animate={{ width: `${result.riskScore}%` }}
-                        transition={{ type: 'spring', stiffness: 52, damping: 16, delay: 0.35 }}
-                        style={{
-                          background: result.riskScore >= 60 ? 'var(--danger)' : result.riskScore >= 28 ? 'var(--grad-orange-start)' : 'var(--ok)',
-                        }}
+                        transition={{ type: 'spring', stiffness: 52, damping: 16, delay: 0.4 }}
                         data-testid="risk-score-bar"
                       />
                     </div>
-                  </div>
-
-                  <div className="flex flex-col gap-2 sm:min-w-[200px]">
-                    <div className="rounded-xl bg-[var(--panel2)] border border-[var(--border)] p-4 flex-1 flex flex-col gap-1">
-                      <span className="text-[10px] font-semibold text-[var(--muted)] uppercase tracking-wider">Documents Checked</span>
-                      <span className="text-2xl font-bold text-[var(--text)]">4</span>
-                    </div>
-                    <div className="rounded-xl bg-[var(--panel2)] border border-[var(--border)] p-4 flex-1 flex flex-col gap-1">
-                      <span className="text-[10px] font-semibold text-[var(--muted)] uppercase tracking-wider">Fraud Flags</span>
-                      <span className="text-2xl font-bold text-[var(--text)]" data-testid="text-flag-count">{result.fraudFlags.length}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {result.fraudFlags.length > 0 && (
-                <motion.div
-                  className="card p-5"
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ type: 'spring', stiffness: 220, damping: 22, delay: 0.15 }}
-                  data-testid="fraud-flags-section"
-                >
-                  <div className="flex items-center gap-2 mb-4">
-                    <ShieldAlert className="w-4 h-4 text-[var(--danger)]" />
-                    <h3 className="text-sm font-bold text-[var(--text)]">Fraud Flags Detected</h3>
-                    <motion.span
-                      initial={{ scale: 0.7, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      transition={{ type: 'spring', stiffness: 380, damping: 22, delay: 0.3 }}
-                      className="ml-auto text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[rgba(225,76,76,0.1)] text-[var(--danger)] border border-[rgba(225,76,76,0.2)]"
-                    >
-                      {result.fraudFlags.length} flag{result.fraudFlags.length > 1 ? 's' : ''}
-                    </motion.span>
-                  </div>
-                  <motion.div
-                    className="flex flex-wrap gap-2"
-                    variants={{ visible: { transition: { staggerChildren: 0.07, delayChildren: 0.18 } } }}
-                    initial="hidden"
-                    animate="visible"
-                  >
-                    {result.fraudFlags.map((flag) => (
-                      <motion.div
-                        key={flag.id}
-                        variants={{
-                          hidden: { opacity: 0, scale: 0.76, y: 6 },
-                          visible: { opacity: 1, scale: 1, y: 0, transition: { type: 'spring', stiffness: 360, damping: 22 } },
-                        }}
-                      >
-                        <FraudFlagChip flag={flag} />
-                      </motion.div>
-                    ))}
                   </motion.div>
-                </motion.div>
-              )}
-
-              <motion.div
-                className="card p-5"
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ type: 'spring', stiffness: 220, damping: 22, delay: 0.22 }}
-                data-testid="correlation-section"
-              >
-                <div className="flex items-center gap-2 mb-4">
-                  <GitMerge className="w-4 h-4 text-[var(--accent)]" />
-                  <h3 className="text-sm font-bold text-[var(--text)]">Cross-Document Correlation</h3>
-                  <span className="text-[10px] text-[var(--muted)] ml-auto">
-                    {result.correlation.filter(c => c.status === 'matched').length}/{result.correlation.length} checks passed
-                  </span>
                 </div>
-                <div className="flex flex-col gap-2">
+
+                {/* hidden compat */}
+                <span className="sr-only" data-testid="text-flag-count">{result.fraudFlags.length}</span>
+
+                {/* ── Fraud Flags + Correlation Summary ── */}
+                <div className="h-px bg-[var(--border)] mb-6" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
+                  {/* Fraud Flags */}
+                  <div data-testid="fraud-flags-section">
+                    <div className="text-sm font-semibold text-[var(--text)] mb-3">Fraud Flags</div>
+                    {result.fraudFlags.length === 0 ? (
+                      <div className="flex items-center gap-2 text-sm text-[var(--ok)]" data-testid="clean-result-banner">
+                        <CheckCircle2 className="w-4 h-4" />
+                        No fraud indicators detected
+                      </div>
+                    ) : (
+                      <motion.div
+                        className="flex flex-wrap gap-2"
+                        variants={{ visible: { transition: { staggerChildren: 0.055, delayChildren: 0.08 } } }}
+                        initial="hidden"
+                        animate="visible"
+                      >
+                        {result.fraudFlags.map((flag) => (
+                          <motion.span
+                            key={flag.id}
+                            variants={{
+                              hidden: { opacity: 0, scale: 0.78, y: 5 },
+                              visible: { opacity: 1, scale: 1, y: 0, transition: { type: 'spring', stiffness: 360, damping: 20 } },
+                            }}
+                            className="inline-flex items-center px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider"
+                            style={{
+                              background: flag.severity === 'high' ? 'rgba(225,76,76,0.08)' : flag.severity === 'medium' ? 'rgba(255,154,85,0.09)' : 'rgba(59,130,246,0.07)',
+                              color: flag.severity === 'high' ? 'var(--danger)' : flag.severity === 'medium' ? 'var(--grad-orange-start)' : 'var(--accent)',
+                              border: `1.5px solid ${flag.severity === 'high' ? 'rgba(225,76,76,0.25)' : flag.severity === 'medium' ? 'rgba(255,154,85,0.32)' : 'rgba(59,130,246,0.22)'}`,
+                            }}
+                          >
+                            {flag.label}
+                          </motion.span>
+                        ))}
+                      </motion.div>
+                    )}
+                  </div>
+
+                  {/* Correlation Summary text */}
+                  <div>
+                    <div className="text-sm font-semibold text-[var(--text)] mb-3">Cross-Document Correlation Summary</div>
+                    <div className="flex flex-col gap-2.5">
+                      {result.correlation.map((item, ci) => (
+                        <motion.p
+                          key={item.field}
+                          initial={{ opacity: 0, x: 10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.1 + ci * 0.07, duration: 0.4 }}
+                          className="text-sm text-[var(--muted)] leading-relaxed"
+                        >
+                          {getCorrelationSentence(item)}
+                        </motion.p>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* ── Field-by-Field Comparison ── */}
+                <div className="h-px bg-[var(--border)] mb-6" data-testid="correlation-section" />
+                <div>
+                  <div className="text-sm font-semibold text-[var(--text)] mb-4">Field-by-Field Comparison</div>
+                  <div className="grid grid-cols-[160px_1fr_110px] gap-4 pb-3 border-b border-[var(--border)]">
+                    <span className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider">Check</span>
+                    <span className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider">Observed Value</span>
+                    <span className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider">Result</span>
+                  </div>
                   {result.correlation.map((item, ci) => (
                     <motion.div
                       key={item.field}
-                      initial={{ opacity: 0, x: -16 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.28 + ci * 0.09, type: 'spring', stiffness: 250, damping: 22 }}
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.18 + ci * 0.08, type: 'spring', stiffness: 260, damping: 22 }}
+                      className="grid grid-cols-[160px_1fr_110px] gap-4 py-4 border-b border-[var(--border)] items-center"
                     >
-                      <CorrelationRow item={item} />
+                      <span className="text-sm font-bold text-[var(--text)]">{item.field}</span>
+                      <span className="text-sm text-[var(--muted)] leading-relaxed">{getObservedValue(item)}</span>
+                      <span
+                        className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider w-fit"
+                        style={{
+                          background: item.status === 'matched' ? 'rgba(39,176,107,0.1)' : item.status === 'review' ? 'rgba(255,154,85,0.1)' : 'rgba(225,76,76,0.09)',
+                          color: item.status === 'matched' ? 'var(--ok)' : item.status === 'review' ? 'var(--grad-orange-start)' : 'var(--danger)',
+                          border: `1.5px solid ${item.status === 'matched' ? 'rgba(39,176,107,0.25)' : item.status === 'review' ? 'rgba(255,154,85,0.3)' : 'rgba(225,76,76,0.22)'}`,
+                        }}
+                      >
+                        {item.status === 'matched' ? 'Matched' : item.status === 'review' ? 'Review' : 'Mismatch'}
+                      </span>
                     </motion.div>
                   ))}
                 </div>
-              </motion.div>
+              </div>
 
-              {result.fraudFlags.length === 0 && (
-                <div className="card p-5 flex items-center gap-3" data-testid="clean-result-banner" style={{ background: 'rgba(39,176,107,0.05)', borderColor: 'rgba(39,176,107,0.2)' }}>
-                  <CheckCircle2 className="w-6 h-6 text-[var(--ok)] flex-shrink-0" />
-                  <div>
-                    <div className="text-sm font-bold text-[var(--ok)]">No Fraud Indicators Detected</div>
-                    <div className="text-xs text-[var(--muted)] mt-0.5">All documents appear authentic and cross-document data is consistent. Claim may proceed to approval.</div>
-                  </div>
-                </div>
-              )}
+              {/* ── 4-column Document Evidence Cards ── */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <DocEvidenceCard
+                  delay={0.05}
+                  iconBg="rgba(59,130,246,0.12)"
+                  iconColor="var(--accent)"
+                  icon={<CreditCard className="w-4 h-4" />}
+                  title="Patient Identity"
+                  subtitle="Who the claim belongs to"
+                  fields={[
+                    { label: 'Patient Name', value: result.extracted.aadhaar.patientName },
+                    { label: 'Age / Date of Birth', value: result.extracted.aadhaar.dob },
+                    { label: 'Aadhaar Number', value: result.extracted.aadhaar.aadhaarId },
+                  ]}
+                  statusLabel="Identity Check"
+                  statusOk={result.extracted.aadhaar.identityMatchStatus === 'Matched'}
+                  statusText={result.extracted.aadhaar.identityMatchStatus === 'Matched' ? 'Looks Consistent' : 'Does Not Match'}
+                  statusSubtext="Patient identity across uploaded documents"
+                />
+                <DocEvidenceCard
+                  delay={0.13}
+                  iconBg="rgba(20,184,166,0.12)"
+                  iconColor="rgb(15,150,130)"
+                  icon={<FileText className="w-4 h-4" />}
+                  title="Medical Report"
+                  subtitle="What the report says"
+                  fields={[
+                    { label: 'Report Type', value: result.extracted.report.reportType },
+                    { label: 'Procedure Mentioned', value: result.extracted.report.procedure },
+                    { label: 'Hospital / Provider', value: result.extracted.report.hospital },
+                  ]}
+                  statusLabel="Report Check"
+                  statusOk={!result.fraudFlags.some(f => f.section === 'report')}
+                  statusText={result.fraudFlags.some(f => f.section === 'report') ? 'Does Not Match' : 'Looks Consistent'}
+                  statusSubtext="Authenticity and provider details"
+                />
+                <DocEvidenceCard
+                  delay={0.21}
+                  iconBg="rgba(6,182,212,0.12)"
+                  iconColor="rgb(6,155,185)"
+                  icon={<Activity className="w-4 h-4" />}
+                  title="Evidence Image"
+                  subtitle="Whether the scan matches the report"
+                  fields={[
+                    { label: 'Detected Image Type', value: result.extracted.image.imageType },
+                    { label: 'Expected Procedure', value: result.extracted.image.linkedProcedure },
+                  ]}
+                  statusLabel="Image Match Check"
+                  statusOk={result.extracted.image.visualMatch === 'Matched'}
+                  statusText={result.extracted.image.visualMatch === 'Matched' ? 'Looks Consistent' : 'Does Not Match'}
+                  statusSubtext="Image compared with uploaded report"
+                />
+                <DocEvidenceCard
+                  delay={0.29}
+                  iconBg="rgba(249,115,22,0.12)"
+                  iconColor="rgb(218,98,18)"
+                  icon={<Receipt className="w-4 h-4" />}
+                  title="Claim Bill"
+                  subtitle="What is being charged"
+                  fields={[
+                    { label: 'Billed Procedure', value: result.extracted.bill.billedProcedure },
+                    { label: 'Total Amount', value: result.extracted.bill.totalAmount },
+                    { label: 'Hospital / Provider', value: result.extracted.bill.hospital },
+                  ]}
+                  statusLabel="Bill Check"
+                  statusOk={!result.fraudFlags.some(f => f.section === 'bill')}
+                  statusText={result.fraudFlags.some(f => f.section === 'bill') ? 'Does Not Match' : 'Looks Consistent'}
+                  statusSubtext="Billing details and procedure consistency"
+                />
+              </div>
+
+              {/* ── Action buttons ── */}
+              <div className="flex items-center justify-end gap-2">
+                <button onClick={handleExport} className="btn btn-secondary text-xs px-3 py-2" data-testid="button-export">
+                  <Download className="w-3.5 h-3.5" />
+                  Export JSON
+                </button>
+                <button onClick={handleReset} className="btn btn-ghost text-xs px-3 py-2" data-testid="button-new-submission">
+                  New Submission
+                </button>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
