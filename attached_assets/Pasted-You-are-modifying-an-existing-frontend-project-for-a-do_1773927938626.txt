@@ -1,0 +1,336 @@
+You are modifying an existing frontend project for a document-forensics / medical-claim fraud detection demo.
+
+IMPORTANT:
+- Do NOT rebuild from scratch unless necessary.
+- Reuse the existing design system, layout style, spacing rhythm, card style, gradients, and overall visual language already present in the app.
+- Keep the current top branding/header intact unless a small polish is needed.
+- This is a FRONTEND DEMO task only.
+- Do NOT implement real backend integration yet.
+- Do NOT add real authentication flows.
+- Do NOT create separate verification tabs for Aadhaar, bill, report, etc.
+- Do NOT make this a multi-page flow.
+- This must be a SINGLE PAGE workflow.
+
+PRIMARY GOAL
+Convert the current generic “Document Verification” screen into a more specific medical claim fraud detection UI for an Ayushman Bharat / PM-JAY style use case.
+
+The old version feels too generic.
+The new version must clearly show:
+1. multiple required medical/identity documents,
+2. fraud checks for each,
+3. cross-document correlation,
+4. a final result section.
+
+CORE STRUCTURE TO IMPLEMENT
+Replace the current generic upload layout with a single-page stacked document submission flow.
+
+The page should contain these 4 document sections, displayed vertically one below another:
+
+1. Aadhaar / Patient Identity Document
+2. Diagnostic Report
+3. Diagnostic Evidence Image
+4. Medical Bill / Claim Bill
+
+Each section should be compact, visually clean, and consistent with the current product styling.
+
+Do NOT use tabs.
+Do NOT hide sections behind navigation.
+All 4 documents should be visible one below another on the same page.
+
+PAGE TITLE / POSITIONING
+Replace the overly generic heading with something more specific and demo-friendly, such as:
+“Medical Claim Fraud Verification”
+or
+“Claim Document Correlation & Verification”
+
+Use a strong subheading that explains the purpose:
+Upload identity and claim-related medical documents. The system checks authenticity, document-type match, and cross-document fraud indicators such as fake reports, fake diagnostic images, edited bills, inflated billing, and report-to-bill mismatches.
+
+TOP SUMMARY CARDS
+Keep the top KPI cards section, but make the labels more relevant to this use case.
+Use 4 cards such as:
+- Documents Uploaded
+- Fraud Flags Detected
+- Correlation Mismatches
+- Manual Review
+
+These should update with smart mock logic once documents are uploaded / processed.
+
+STACKED DOCUMENT SECTIONS
+Create 4 visually distinct upload cards stacked vertically with consistent spacing.
+
+SECTION 1: Aadhaar / Patient Identity Document
+Purpose:
+- upload Aadhaar or patient identity proof
+- show identity extraction summary
+- show patient authenticity / identity consistency status
+
+UI content:
+- section title
+- small helper text
+- upload box
+- accepted type note (PDF/JPG/PNG)
+- file selected state
+- mini status placeholder
+- extracted details placeholder after verification
+
+Suggested extracted fields to show after run:
+- Patient Name
+- Date of Birth / Age
+- Aadhaar ID (masked)
+- Gender
+- Identity Match Status
+
+Possible fraud flags for this section:
+- Fake Patient Suspected
+- Identity Mismatch
+- Incomplete Identity Data
+
+SECTION 2: Diagnostic Report
+Purpose:
+- upload medical report such as X-ray report / MRI report / pathology report
+- show extracted procedure/report type
+- show report authenticity indicators
+
+UI content:
+- section title
+- upload area
+- selected file state
+- extracted report summary after verification
+
+Suggested extracted fields:
+- Report Type
+- Procedure Mentioned
+- Report Date
+- Hospital / Provider Name
+- Patient Name in Report
+
+Possible fraud flags:
+- Fake Report Suspected
+- Missing Provider Information
+- Patient Name Mismatch
+- Suspicious Report Content
+
+SECTION 3: Diagnostic Evidence Image
+Purpose:
+- upload diagnostic image or evidence image associated with the report
+- compare image type against report type
+
+UI content:
+- section title
+- upload area
+- preview thumbnail if image uploaded
+- image status area
+- consistency result after verification
+
+Possible displayed outputs:
+- Image Type Detected (mock)
+- Linked Procedure
+- Visual Match with Report: Matched / Needs Review / Mismatch
+
+Possible fraud flags:
+- Fake Diagnostic Image
+- Reused / Unrelated Image
+- Diagnostic Image Mismatch
+- Tampering Suspected
+
+SECTION 4: Medical Bill / Claim Bill
+Purpose:
+- upload the bill being claimed
+- show billed procedure, amount, and fraud indicators
+
+UI content:
+- section title
+- upload area
+- selected file state
+- extracted billing summary after verification
+
+Suggested extracted fields:
+- Billed Procedure
+- Total Amount
+- Bill Date
+- Hospital / Provider
+- Patient Name on Bill
+
+Possible fraud flags:
+- Fake Bill Suspected
+- Edited Bill
+- Inflated Bill
+- Missing Billing Details
+- Procedure Billing Mismatch
+
+RUN ANALYSIS AREA
+Below the 4 stacked sections, create a prominent CTA:
+“Run Fraud Verification”
+
+Add helper text below the button before upload:
+“Upload all required documents to generate fraud analysis.”
+
+The button should become enabled only when all 4 document sections have a file selected.
+Also add an optional “Run Demo with Sample Data” button if helpful for presentation.
+
+FINAL RESULT SECTION
+Below the run button, add a rich result panel that appears after running verification.
+
+This result section should include:
+
+A. Overall Verdict Card
+Show one of:
+- Verified Safe
+- Needs Manual Review
+- High Fraud Risk
+
+Also display a demo risk score, for example:
+Risk Score: 72/100
+
+B. Fraud Flags List
+Display visible chips/badges/cards for issues like:
+- Fake Patient Suspected
+- Fake Report Suspected
+- Fake Diagnostic Image
+- Fake Bill Suspected
+- Edited Bill
+- Inflated Billing Risk
+- Procedure Mismatch
+- Identity Mismatch
+- Date Inconsistency
+- Provider Mismatch
+
+C. Cross-Document Correlation Summary
+This is very important.
+Create a dedicated correlation block that compares:
+- Patient identity across Aadhaar, report, and bill
+- Procedure in report vs procedure in bill
+- Hospital / provider consistency
+- Timeline / date consistency
+- Diagnostic image consistency with report type
+
+D. Field-by-Field Comparison Table or Comparison Cards
+Example comparisons:
+- Patient Name: Matched / Mismatch
+- Report Type: X-ray
+- Billed Procedure: MRI
+- Result: Procedure Mismatch
+- Hospital Name: Matched / Review Required
+- Dates: Consistent / Inconsistent
+
+SMART MOCK LOGIC
+Implement deterministic frontend-only mock logic so the demo feels intelligent.
+
+Do NOT use random outputs that change every click.
+Use rule-based mock logic based on uploaded file names and document presence.
+
+Example behavior:
+- If all four files are uploaded, button becomes enabled.
+- On click, show progress/loading states for 2–3 seconds.
+- Then populate extracted mock data and result blocks.
+
+Use filename-based heuristics where possible:
+- if filename contains “aadhaar”, “id”, “patient” → treat as identity document
+- if filename contains “xray”, “mri”, “ct”, “lab”, “report” → infer report type
+- if filename contains “scan”, “image”, “evidence”, “xray”, “mri” → infer diagnostic image type
+- if filename contains “bill”, “invoice”, “claim” → treat as bill
+
+Add demo mismatch rules such as:
+- if diagnostic report filename suggests “xray” but bill filename suggests “mri”, show “Procedure Mismatch”
+- if Aadhaar filename and bill/report data don’t align in mock fields, show “Identity Mismatch”
+- if bill filename contains words like “edited”, “final2”, “scan_copy”, “revised”, “invoice_new”, raise bill tampering / edited bill suspicion
+- if amount shown in bill mock data is much higher than expected for the detected procedure, show “Inflated Billing Risk”
+- if image type and report type do not align, show “Diagnostic Image Mismatch”
+
+Also allow a clean safe scenario if filenames appear aligned.
+
+VISUAL BEHAVIOR
+Use polished micro-interactions:
+- hover state on upload cards
+- selected state when file is uploaded
+- loading skeleton or spinner during analysis
+- colored severity tags
+- green/yellow/red status indicators
+- subtle motion only, not excessive animation
+
+Keep the UI premium and presentation-ready.
+It should look like a serious healthcare fraud demo, not a student toy upload page.
+
+LAYOUT DETAILS
+- Keep the page clean and centered.
+- Maintain strong card hierarchy.
+- Each document card should be slightly smaller and more compact than the current generic upload blocks.
+- Use consistent padding, border radius, icon sizing, and section spacing.
+- The result section should feel like the payoff of the workflow.
+
+CONTENT / CHECKS THAT MUST BE REPRESENTED IN THE UI
+Make sure the UI visibly covers these fraud concepts:
+- Fake patient / fake candidate
+- Fake report
+- Fake diagnostic image
+- Fake bill
+- Edited bill
+- Inflated bill
+- Report-to-bill mismatch
+- Cross-document correlation mismatch
+
+Also include the classic example in the demo logic:
+- report says X-ray
+- bill says MRI
+- final result should flag Procedure Mismatch
+
+TECHNICAL REQUIREMENTS
+- Preserve the existing frontend stack and project conventions.
+- Reuse components where sensible.
+- Keep code modular and readable.
+- Create or update reusable components if needed.
+- Avoid unnecessary dependencies.
+- Ensure the page is responsive.
+- Ensure upload states are handled cleanly.
+- Ensure result state resets properly if files are changed after analysis.
+
+STATE LOGIC
+Please manage at least these states:
+- uploaded files per section
+- inferred document type metadata
+- analysis in progress
+- analysis completed
+- extracted mock data
+- fraud flags
+- correlation summary
+- final verdict
+
+NICE-TO-HAVE
+If practical, add:
+- a “Clear All” button
+- per-section status pill: Pending / Ready / Processed
+- a compact timeline or verification step indicator:
+  Upload → Analyze → Correlate → Result
+
+IMPORTANT NON-GOALS
+- No backend calls
+- No real OCR
+- No real AI model integration
+- No database
+- No authentication work
+- No report/document generation feature in this task
+
+DELIVERABLES
+1. Update the existing frontend page to the new stacked 4-document fraud-analysis flow.
+2. Ensure the result area clearly shows fraud logic and correlation.
+3. Make the demo presentation-ready for tomorrow.
+4. Keep the implementation stable and polished.
+
+ALSO IMPORTANT:
+After making the code changes, update the extremely detailed TXT documentation in kyc-infra-main/docs to reflect every frontend/UI/logic change made here, including:
+- page structure changes
+- component changes
+- added sections
+- state logic
+- smart mock logic rules
+- result-generation logic
+- visual/UX changes
+- any renamed labels or flows
+This documentation update must be detailed enough for team verification.
+
+At the end, provide:
+- a short summary of what changed
+- which files were modified
+- how the smart mock logic works
+- how to demo both a “safe” and a “fraud mismatch” scenario
