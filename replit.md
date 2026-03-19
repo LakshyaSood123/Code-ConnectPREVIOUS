@@ -155,6 +155,20 @@ Each card is a `CompactUploadCard` with:
 - **esbuild**: Server bundling for production
 - **TypeScript**: Type checking across client/server/shared code
 
+### Animation Layer (`ui.css` + `Home.tsx`)
+- **Hero**: radial glow (`hero-glow`), spring badge entrance, gradient-text-danger on "Fraud" word
+- **Page background**: subtle dot grid (`page-dot-grid`)
+- **KPI tiles**: `AnimatedNumber` count-up (useMotionValue + useSpring), individual staggered spring entrances, motion whileHover lift
+- **Step indicator**: CSS pulse ring (`step-ring`) on current active step
+- **Upload cards**: each card wrapped in motion.div with staggered spring entrance (delay 0.14 + i*0.08); file selection animates in from left; file icon/preview thumbnail spring scales in; "Change" button has whileTap
+- **CTA button**: `btn-glow-pulse` CSS animation when all 4 docs ready and not yet run; motion whileHover + whileTap; "Clear All" animates in/out with AnimatePresence
+- **Analysis loading**: progress bar fill animation (`analysis-bar-fill`), steps stagger in from left with spring (delay i*0.38s)
+- **Result section**: entire section spring-enters; risk score uses `AnimatedNumber`; risk bar animates from 0% with spring (stiffness 52, damping 16); fraud flag chips stagger in with pop (staggerChildren 0.07); correlation rows slide in from left (delay 0.28 + i*0.09)
+- **Card hover (global)**: springy cubic-bezier(0.34,1.56,0.64,1) translateY(-2px) scale(1.002) with blue border tint
+- **File drop area hover**: scale(1.006) + blue border + light background fill
+- **Extracted fields in result cards**: staggered y-fade in with spring (delay fi*0.06)
+- **Evidence thumbnail**: spring scale in, whileHover scale 1.06, whileTap scale 0.96
+
 ### Styling
 - **Tailwind CSS**: Utility-first CSS framework
 - **class-variance-authority**: Component variant management

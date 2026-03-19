@@ -28,7 +28,7 @@ import {
   RefreshCw,
   PlayCircle,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useSpring } from 'framer-motion';
 
 type Verdict = 'REAL' | 'FAKE' | 'MEDIUM';
 type OverallDecision = 'APPROVE' | 'REJECT' | 'MANUAL_REVIEW';
@@ -385,6 +385,15 @@ function runMedicalMockAnalysis(
       riskScore: imgV.riskScore,
     },
   };
+}
+
+function AnimatedNumber({ value }: { value: number }) {
+  const mv = useMotionValue(0);
+  const spring = useSpring(mv, { stiffness: 90, damping: 20 });
+  const [display, setDisplay] = useState(0);
+  useEffect(() => { mv.set(value); }, [value, mv]);
+  useEffect(() => spring.on('change', (v) => setDisplay(Math.round(v))), [spring]);
+  return <>{display}</>;
 }
 
 const DEMO_SVG_URL =
@@ -751,21 +760,27 @@ function KpiTiles({ stats }: { stats: { uploaded: number; flags: number; mismatc
   ];
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4" data-testid="kpi-tiles">
-      {tiles.map((tile) => {
+      {tiles.map((tile, i) => {
         const Icon = tile.icon;
         return (
-          <div
+          <motion.div
             key={tile.label}
-            className={`${tile.gradient} rounded-[var(--radius)] p-5 shadow-[var(--shadow)] transition-transform hover:-translate-y-0.5 hover:shadow-[var(--shadow-strong)]`}
+            initial={{ opacity: 0, y: 14, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ delay: 0.06 + i * 0.07, type: 'spring', stiffness: 260, damping: 22 }}
+            whileHover={{ y: -4, scale: 1.03, transition: { type: 'spring', stiffness: 340, damping: 18 } }}
+            className={`${tile.gradient} kpi-tile rounded-[var(--radius)] p-5 shadow-[var(--shadow)]`}
             style={{ color: 'var(--panel)' }}
             data-testid={`kpi-${tile.label.toLowerCase().replace(/\s+/g, '-')}`}
           >
             <div className="flex items-center justify-between mb-3">
               <Icon className="w-5 h-5" style={{ color: 'var(--panel)' }} />
             </div>
-            <div className="text-3xl font-bold tracking-tight">{tile.value}</div>
+            <div className="text-3xl font-bold tracking-tight">
+              <AnimatedNumber value={tile.value} />
+            </div>
             <div className="text-xs font-semibold opacity-80 mt-1 uppercase tracking-wider">{tile.label}</div>
-          </div>
+          </motion.div>
         );
       })}
     </div>
@@ -868,29 +883,47 @@ function CompactUploadCard({
         />
 
         {file ? (
-          <div className="flex items-center gap-3" data-testid={`${testId}-selected`}>
+          <motion.div
+            className="flex items-center gap-3"
+            initial={{ opacity: 0, x: -8 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ type: 'spring', stiffness: 320, damping: 26 }}
+            data-testid={`${testId}-selected`}
+          >
             {previewUrl ? (
-              <div className="w-10 h-10 rounded-lg overflow-hidden border border-[var(--border)] flex-shrink-0">
+              <motion.div
+                className="w-10 h-10 rounded-lg overflow-hidden border border-[var(--border)] flex-shrink-0"
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 24 }}
+              >
                 <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
-              </div>
+              </motion.div>
             ) : (
-              <div className="w-10 h-10 rounded-lg bg-[var(--panel2)] border border-[var(--border)] flex items-center justify-center flex-shrink-0">
-                <FileText className="w-4.5 h-4.5 text-[var(--accent)]" />
-              </div>
+              <motion.div
+                className="w-10 h-10 rounded-lg bg-[var(--panel2)] border border-[var(--border)] flex items-center justify-center flex-shrink-0"
+                initial={{ scale: 0.7, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 22 }}
+              >
+                <FileText className="w-4 h-4 text-[var(--accent)]" />
+              </motion.div>
             )}
             <div className="flex-1 min-w-0">
               <div className="text-xs font-semibold text-[var(--text)] truncate" title={file.name} data-testid={`${testId}-filename`}>{file.name}</div>
               <div className="text-[10px] text-[var(--muted)] mt-0.5">{(file.size / 1024).toFixed(1)} KB · {isAnalyzing ? 'Analyzing…' : processed ? 'Processed' : 'Ready'}</div>
             </div>
-            <button
+            <motion.button
               type="button"
               onClick={triggerInput}
-              className="text-[11px] font-semibold px-2.5 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--panel2)] text-[var(--muted)] hover:text-[var(--text)] hover:border-[var(--accent)] transition-all flex-shrink-0"
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.95 }}
+              className="text-[11px] font-semibold px-2.5 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--panel2)] text-[var(--muted)] hover:text-[var(--text)] hover:border-[var(--accent)] transition-colors flex-shrink-0"
               data-testid={`${testId}-change`}
             >
               Change
-            </button>
-          </div>
+            </motion.button>
+          </motion.div>
         ) : (
           <div
             className={`file-drop-area flex items-center gap-3 py-3 px-4 min-h-[56px] ${dragOver ? 'border-[var(--accent)] bg-[rgba(59,130,246,0.05)]' : ''}`}
@@ -1109,28 +1142,48 @@ export default function Home() {
   const step = isAnalyzing ? 2 : result ? 4 : canRun ? 1 : 0;
 
   return (
-    <div className="min-h-screen bg-[var(--bg)] pb-20 font-sans selection:bg-[var(--accent)] selection:text-white">
+    <div className="min-h-screen bg-[var(--bg)] page-dot-grid pb-20 font-sans selection:bg-[var(--accent)] selection:text-white">
       <NavBar />
 
       <main className="max-w-[960px] mx-auto px-6 pt-10">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8 text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[rgba(59,130,246,0.08)] border border-[rgba(59,130,246,0.2)] text-[var(--accent)] text-[11px] font-semibold mb-4 uppercase tracking-wider">
+        <div className="relative mb-8 text-center overflow-hidden">
+          <div className="hero-glow" />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.88, y: -6 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ type: 'spring', stiffness: 340, damping: 26, delay: 0.05 }}
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[rgba(59,130,246,0.08)] border border-[rgba(59,130,246,0.2)] text-[var(--accent)] text-[11px] font-semibold mb-4 uppercase tracking-wider relative z-10"
+          >
             <ShieldAlert className="w-3 h-3" />
             Ayushman Bharat / PM-JAY
-          </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-[var(--text)] tracking-tight mb-3 leading-tight" data-testid="text-hero-title">
-            Medical Claim Fraud Verification
-          </h1>
-          <p className="text-sm md:text-base text-[var(--muted)] max-w-2xl mx-auto leading-relaxed" data-testid="text-hero-subtitle">
+          </motion.div>
+          <motion.h1
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: 'spring', stiffness: 220, damping: 24, delay: 0.12 }}
+            className="text-3xl md:text-4xl font-bold text-[var(--text)] tracking-tight mb-3 leading-tight relative z-10"
+            data-testid="text-hero-title"
+          >
+            Medical Claim{' '}
+            <span className="gradient-text-danger">Fraud</span>{' '}
+            Verification
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.22, duration: 0.5 }}
+            className="text-sm md:text-base text-[var(--muted)] max-w-2xl mx-auto leading-relaxed relative z-10"
+            data-testid="text-hero-subtitle"
+          >
             Upload identity and claim-related medical documents. The system checks authenticity, document-type match, and cross-document fraud indicators including fake reports, fake diagnostic images, edited bills, inflated billing, and report-to-bill mismatches.
-          </p>
-        </motion.div>
+          </motion.p>
+        </div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="mb-6">
           <KpiTiles stats={kpiStats} />
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }} className="mb-6">
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08, duration: 0.4 }} className="mb-6">
           <div className="flex items-center gap-0">
             {['Upload', 'Analyze', 'Correlate', 'Result'].map((label, i) => {
               const active = step > i;
@@ -1139,19 +1192,32 @@ export default function Home() {
                 <div key={label} className="flex items-center flex-1">
                   <div className="flex flex-col items-center gap-1 flex-1">
                     <div
-                      className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold transition-all"
+                      className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold transition-all duration-300 ${current ? 'step-ring' : ''}`}
                       style={{
                         background: active || current ? 'var(--accent)' : 'var(--panel2)',
-                        color: active || current ? 'white' : 'var(--muted)',
-                        border: active || current ? '2px solid var(--accent)' : '2px solid var(--border)',
+                        color: active || current ? '#ffffff' : 'var(--muted)',
+                        border: `2px solid ${active || current ? 'var(--accent)' : 'var(--border)'}`,
                       }}
                     >
-                      {active && !current ? <Check className="w-3.5 h-3.5" /> : i + 1}
+                      <AnimatePresence mode="wait">
+                        {active && !current
+                          ? <motion.span key="check" initial={{ scale: 0, rotate: -30 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 400, damping: 20 }}><Check className="w-3.5 h-3.5" /></motion.span>
+                          : <motion.span key={`num-${i}`} initial={{ opacity: 0.6 }} animate={{ opacity: 1 }}>{i + 1}</motion.span>
+                        }
+                      </AnimatePresence>
                     </div>
-                    <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: active || current ? 'var(--accent)' : 'var(--muted)' }}>{label}</span>
+                    <span
+                      className="text-[10px] font-semibold uppercase tracking-wide transition-colors duration-250"
+                      style={{ color: active || current ? 'var(--accent)' : 'var(--muted)' }}
+                    >
+                      {label}
+                    </span>
                   </div>
                   {i < 3 && (
-                    <div className="flex-1 h-px mx-1 mb-4" style={{ background: active ? 'var(--accent)' : 'var(--border)', transition: 'background 0.3s' }} />
+                    <div
+                      className="flex-1 h-px mx-1 mb-4 transition-all duration-400"
+                      style={{ background: active ? 'var(--accent)' : 'var(--border)' }}
+                    />
                   )}
                 </div>
               );
@@ -1159,166 +1225,170 @@ export default function Home() {
           </div>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }} className="flex flex-col gap-4 mb-6">
-          <CompactUploadCard
-            index={1}
-            icon={<CreditCard className="w-4 h-4 text-[var(--accent)]" />}
-            title="Aadhaar / Patient Identity Document"
-            helperText="Upload Aadhaar card or patient identity proof for identity verification"
-            accept="application/pdf,image/png,image/jpeg,.pdf,.jpg,.jpeg,.png"
-            acceptNote="Accepted: PDF, JPG, PNG"
-            file={aadhaarFile}
-            inputRef={aadhaarInputRef}
-            onSelect={makeSlotSetter(setAadhaarFile)}
-            isAnalyzing={isAnalyzing}
-            processed={processed}
-            testId="upload-aadhaar"
-          >
-            {result && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2.5">
-                <ExtractedField label="Patient Name" value={result.extracted.aadhaar.patientName} />
-                <ExtractedField label="Date of Birth" value={result.extracted.aadhaar.dob} />
-                <ExtractedField label="Aadhaar ID" value={result.extracted.aadhaar.aadhaarId} />
-                <ExtractedField label="Gender" value={result.extracted.aadhaar.gender} />
-                <ExtractedField
-                  label="Identity Match"
-                  value={result.extracted.aadhaar.identityMatchStatus}
-                  flagged={result.extracted.aadhaar.identityMatchStatus !== 'Matched'}
-                />
-              </div>
-            )}
-          </CompactUploadCard>
-
-          <CompactUploadCard
-            index={2}
-            icon={<FileText className="w-4 h-4 text-[var(--accent-4)]" />}
-            title="Diagnostic Report"
-            helperText="Upload medical report — X-ray, MRI, CT scan, or pathology report"
-            accept="application/pdf,.pdf"
-            acceptNote="Accepted: PDF"
-            file={reportFile}
-            inputRef={reportInputRef}
-            onSelect={makeSlotSetter(setReportFile)}
-            isAnalyzing={isAnalyzing}
-            processed={processed}
-            testId="upload-report"
-          >
-            {result && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2.5">
-                <ExtractedField label="Report Type" value={result.extracted.report.reportType} />
-                <ExtractedField label="Procedure" value={result.extracted.report.procedure} />
-                <ExtractedField label="Report Date" value={result.extracted.report.reportDate} />
-                <ExtractedField label="Hospital" value={result.extracted.report.hospital} />
-                <ExtractedField label="Patient Name" value={result.extracted.report.patientName} />
-              </div>
-            )}
-          </CompactUploadCard>
-
-          <CompactUploadCard
-            index={3}
-            icon={<Activity className="w-4 h-4 text-[var(--accent-2)]" />}
-            title="Diagnostic Evidence Image"
-            helperText="Upload diagnostic scan image or evidence image associated with the report"
-            accept="image/png,image/jpeg,image/jpg,.jpg,.jpeg,.png"
-            acceptNote="Accepted: JPG, PNG"
-            file={imageFile}
-            previewUrl={imagePreviewUrl}
-            inputRef={imageInputRef}
-            onSelect={handleImageSelect}
-            isAnalyzing={isAnalyzing}
-            processed={processed}
-            testId="upload-image"
-          >
-            {result && (
-              <div className="flex items-start gap-4">
-                {imagePreviewUrl && (
-                  <div
-                    className="w-14 h-14 rounded-lg overflow-hidden border border-[var(--border)] flex-shrink-0 cursor-pointer hover:border-[var(--accent-2)] transition-colors relative group"
-                    onClick={() => setLightboxOpen(true)}
-                    data-testid="tile-image"
-                  >
-                    <img src={imagePreviewUrl} alt="Evidence" className="w-full h-full object-cover" data-testid="img-thumbnail" />
-                    {result.imageInfo.forgeryLocalization && (
-                      <svg
-                        className="absolute top-0 left-0 pointer-events-none"
-                        width="100%" height="100%"
-                        viewBox="0 0 1 1"
-                        preserveAspectRatio="none"
-                        data-testid="thumbnail-polygon-overlay"
-                      >
-                        <polygon
-                          points={result.imageInfo.forgeryLocalization.points.map(p => `${p.x},${p.y}`).join(' ')}
-                          fill="transparent"
-                          stroke="var(--danger)"
-                          strokeWidth="0.015"
-                          strokeLinejoin="round"
-                        />
-                        {result.imageInfo.forgeryLocalization.points.map((p, i) => (
-                          <circle key={i} cx={p.x} cy={p.y} r={0.015} fill="var(--danger)" stroke="var(--panel)" strokeWidth="0.005" />
-                        ))}
-                      </svg>
-                    )}
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 transition-all">
-                      <Eye className="w-3.5 h-3.5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </div>
-                  </div>
-                )}
-                <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 flex-1">
-                  <ExtractedField label="Image Type" value={result.extracted.image.imageType} />
-                  <ExtractedField label="Linked Procedure" value={result.extracted.image.linkedProcedure} />
-                  <ExtractedField
-                    label="Visual Match with Report"
-                    value={result.extracted.image.visualMatch}
-                    flagged={result.extracted.image.visualMatch === 'Mismatch'}
-                  />
-                  <ExtractedField
-                    label="AI Forensic Score"
-                    value={`${result.imageInfo.riskScore}% risk`}
-                    flagged={result.imageInfo.riskScore >= 60}
-                  />
+        <div className="flex flex-col gap-4 mb-6">
+          {([
+            {
+              index: 1,
+              icon: <CreditCard className="w-4 h-4 text-[var(--accent)]" />,
+              title: 'Aadhaar / Patient Identity Document',
+              helperText: 'Upload Aadhaar card or patient identity proof for identity verification',
+              accept: 'application/pdf,image/png,image/jpeg,.pdf,.jpg,.jpeg,.png',
+              acceptNote: 'Accepted: PDF, JPG, PNG',
+              file: aadhaarFile,
+              inputRef: aadhaarInputRef,
+              onSelect: makeSlotSetter(setAadhaarFile),
+              testId: 'upload-aadhaar',
+              children: result && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2.5">
+                  {[
+                    { label: 'Patient Name', value: result.extracted.aadhaar.patientName },
+                    { label: 'Date of Birth', value: result.extracted.aadhaar.dob },
+                    { label: 'Aadhaar ID', value: result.extracted.aadhaar.aadhaarId },
+                    { label: 'Gender', value: result.extracted.aadhaar.gender },
+                    { label: 'Identity Match', value: result.extracted.aadhaar.identityMatchStatus, flagged: result.extracted.aadhaar.identityMatchStatus !== 'Matched' },
+                  ].map((f, fi) => (
+                    <motion.div key={f.label} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: fi * 0.06, type: 'spring', stiffness: 280, damping: 22 }}>
+                      <ExtractedField label={f.label} value={f.value} flagged={f.flagged} />
+                    </motion.div>
+                  ))}
                 </div>
-              </div>
-            )}
-          </CompactUploadCard>
-
-          <CompactUploadCard
-            index={4}
-            icon={<Receipt className="w-4 h-4 text-[var(--grad-orange-start)]" />}
-            title="Medical Bill / Claim Bill"
-            helperText="Upload the medical bill or insurance claim document being submitted"
-            accept="application/pdf,image/png,image/jpeg,.pdf,.jpg,.jpeg,.png"
-            acceptNote="Accepted: PDF, JPG, PNG"
-            file={billFile}
-            inputRef={billInputRef}
-            onSelect={makeSlotSetter(setBillFile)}
-            isAnalyzing={isAnalyzing}
-            processed={processed}
-            testId="upload-bill"
-          >
-            {result && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2.5">
-                <ExtractedField label="Billed Procedure" value={result.extracted.bill.billedProcedure} />
-                <ExtractedField label="Total Amount" value={result.extracted.bill.totalAmount} />
-                <ExtractedField label="Bill Date" value={result.extracted.bill.billDate} />
-                <ExtractedField label="Hospital" value={result.extracted.bill.hospital} />
-                <ExtractedField label="Patient Name" value={result.extracted.bill.patientName} flagged={result.extracted.aadhaar.patientName !== result.extracted.bill.patientName} />
-              </div>
-            )}
-          </CompactUploadCard>
-        </motion.div>
+              ),
+            },
+            {
+              index: 2,
+              icon: <FileText className="w-4 h-4 text-[var(--accent-4)]" />,
+              title: 'Diagnostic Report',
+              helperText: 'Upload medical report — X-ray, MRI, CT scan, or pathology report',
+              accept: 'application/pdf,.pdf',
+              acceptNote: 'Accepted: PDF',
+              file: reportFile,
+              inputRef: reportInputRef,
+              onSelect: makeSlotSetter(setReportFile),
+              testId: 'upload-report',
+              children: result && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2.5">
+                  {[
+                    { label: 'Report Type', value: result.extracted.report.reportType },
+                    { label: 'Procedure', value: result.extracted.report.procedure },
+                    { label: 'Report Date', value: result.extracted.report.reportDate },
+                    { label: 'Hospital', value: result.extracted.report.hospital },
+                    { label: 'Patient Name', value: result.extracted.report.patientName },
+                  ].map((f, fi) => (
+                    <motion.div key={f.label} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: fi * 0.06, type: 'spring', stiffness: 280, damping: 22 }}>
+                      <ExtractedField label={f.label} value={f.value} />
+                    </motion.div>
+                  ))}
+                </div>
+              ),
+            },
+            {
+              index: 3,
+              icon: <Activity className="w-4 h-4 text-[var(--accent-2)]" />,
+              title: 'Diagnostic Evidence Image',
+              helperText: 'Upload diagnostic scan image or evidence image associated with the report',
+              accept: 'image/png,image/jpeg,image/jpg,.jpg,.jpeg,.png',
+              acceptNote: 'Accepted: JPG, PNG',
+              file: imageFile,
+              previewUrl: imagePreviewUrl,
+              inputRef: imageInputRef,
+              onSelect: handleImageSelect,
+              testId: 'upload-image',
+              children: result && (
+                <div className="flex items-start gap-4">
+                  {imagePreviewUrl && (
+                    <motion.div
+                      className="w-14 h-14 rounded-lg overflow-hidden border border-[var(--border)] flex-shrink-0 cursor-pointer hover:border-[var(--accent-2)] transition-colors relative group"
+                      onClick={() => setLightboxOpen(true)}
+                      whileHover={{ scale: 1.06 }}
+                      whileTap={{ scale: 0.96 }}
+                      transition={{ type: 'spring', stiffness: 360, damping: 22 }}
+                      initial={{ scale: 0.85, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      data-testid="tile-image"
+                    >
+                      <img src={imagePreviewUrl} alt="Evidence" className="w-full h-full object-cover" data-testid="img-thumbnail" />
+                      {result.imageInfo.forgeryLocalization && (
+                        <svg className="absolute top-0 left-0 pointer-events-none" width="100%" height="100%" viewBox="0 0 1 1" preserveAspectRatio="none" data-testid="thumbnail-polygon-overlay">
+                          <polygon points={result.imageInfo.forgeryLocalization.points.map(p => `${p.x},${p.y}`).join(' ')} fill="transparent" stroke="var(--danger)" strokeWidth="0.015" strokeLinejoin="round" />
+                          {result.imageInfo.forgeryLocalization.points.map((p, i) => (
+                            <circle key={i} cx={p.x} cy={p.y} r={0.015} fill="var(--danger)" stroke="var(--panel)" strokeWidth="0.005" />
+                          ))}
+                        </svg>
+                      )}
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 transition-all">
+                        <Eye className="w-3.5 h-3.5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                    </motion.div>
+                  )}
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 flex-1">
+                    {[
+                      { label: 'Image Type', value: result.extracted.image.imageType },
+                      { label: 'Linked Procedure', value: result.extracted.image.linkedProcedure },
+                      { label: 'Visual Match with Report', value: result.extracted.image.visualMatch, flagged: result.extracted.image.visualMatch === 'Mismatch' },
+                      { label: 'AI Forensic Score', value: `${result.imageInfo.riskScore}% risk`, flagged: result.imageInfo.riskScore >= 60 },
+                    ].map((f, fi) => (
+                      <motion.div key={f.label} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: fi * 0.07, type: 'spring', stiffness: 280, damping: 22 }}>
+                        <ExtractedField label={f.label} value={f.value} flagged={f.flagged} />
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+              ),
+            },
+            {
+              index: 4,
+              icon: <Receipt className="w-4 h-4 text-[var(--grad-orange-start)]" />,
+              title: 'Medical Bill / Claim Bill',
+              helperText: 'Upload the medical bill or insurance claim document being submitted',
+              accept: 'application/pdf,image/png,image/jpeg,.pdf,.jpg,.jpeg,.png',
+              acceptNote: 'Accepted: PDF, JPG, PNG',
+              file: billFile,
+              inputRef: billInputRef,
+              onSelect: makeSlotSetter(setBillFile),
+              testId: 'upload-bill',
+              children: result && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2.5">
+                  {[
+                    { label: 'Billed Procedure', value: result.extracted.bill.billedProcedure },
+                    { label: 'Total Amount', value: result.extracted.bill.totalAmount },
+                    { label: 'Bill Date', value: result.extracted.bill.billDate },
+                    { label: 'Hospital', value: result.extracted.bill.hospital },
+                    { label: 'Patient Name', value: result.extracted.bill.patientName, flagged: result.extracted.aadhaar.patientName !== result.extracted.bill.patientName },
+                  ].map((f, fi) => (
+                    <motion.div key={f.label} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: fi * 0.06, type: 'spring', stiffness: 280, damping: 22 }}>
+                      <ExtractedField label={f.label} value={f.value} flagged={f.flagged} />
+                    </motion.div>
+                  ))}
+                </div>
+              ),
+            },
+          ] as Array<React.ComponentProps<typeof CompactUploadCard>>).map((cardProps, i) => (
+            <motion.div
+              key={cardProps.testId}
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.14 + i * 0.08, type: 'spring', stiffness: 230, damping: 22 }}
+            >
+              <CompactUploadCard {...cardProps} isAnalyzing={isAnalyzing} processed={processed} />
+            </motion.div>
+          ))}
+        </div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }} className="card p-5 mb-6">
           <div className="flex flex-col items-center gap-3">
-            <button
+            <motion.button
               onClick={canRun && !result ? runVerification : undefined}
               disabled={!canRun || !!result || isAnalyzing}
+              whileHover={canRun && !result ? { scale: 1.02 } : undefined}
+              whileTap={canRun && !result ? { scale: 0.97 } : undefined}
+              transition={{ type: 'spring', stiffness: 360, damping: 22 }}
               data-ready={String(canRun && !result)}
               data-testid="button-run-verification"
+              className={canRun && !result ? 'btn-glow-pulse' : ''}
               style={{
                 background: canRun && !result ? 'var(--accent)' : 'var(--panel2)',
                 color: canRun && !result ? 'var(--panel)' : 'var(--muted)',
                 border: canRun && !result ? '2px solid var(--accent)' : '2px solid var(--border)',
-                boxShadow: canRun && !result ? 'var(--shadow-strong)' : 'none',
                 minHeight: '52px',
                 width: '100%',
                 maxWidth: '480px',
@@ -1332,39 +1402,54 @@ export default function Home() {
                 letterSpacing: '0.04em',
                 textTransform: 'uppercase' as const,
                 cursor: canRun && !result ? 'pointer' : 'not-allowed',
-                transition: 'all 0.2s ease',
+                transition: 'background 0.2s ease, color 0.2s ease, border-color 0.2s ease',
               }}
             >
               {isAnalyzing && <Loader2 className="w-4 h-4 animate-spin" />}
+              {result && <CheckCircle2 className="w-4 h-4 text-[var(--ok)]" />}
               {isAnalyzing ? 'Running Fraud Analysis…' : result ? 'Analysis Complete' : 'Run Fraud Verification'}
-            </button>
+            </motion.button>
             <div className="flex items-center gap-3">
-              <button
+              <motion.button
                 onClick={runDemo}
                 disabled={isAnalyzing}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-[var(--border)] bg-[var(--panel2)] text-[var(--muted)] hover:text-[var(--text)] hover:border-[var(--accent)] text-xs font-semibold transition-all"
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.97 }}
+                transition={{ type: 'spring', stiffness: 360, damping: 22 }}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-[var(--border)] bg-[var(--panel2)] text-[var(--muted)] hover:text-[var(--text)] text-xs font-semibold transition-colors"
                 data-testid="button-run-demo"
               >
                 <PlayCircle className="w-3.5 h-3.5" />
                 Run Demo with Sample Data
-              </button>
-              {(aadhaarFile || reportFile || imageFile || billFile || result) && (
-                <button
-                  onClick={handleReset}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-[var(--muted)] hover:text-[var(--danger)] transition-colors"
-                  data-testid="button-clear-all"
-                >
-                  <RefreshCw className="w-3 h-3" />
-                  Clear All
-                </button>
-              )}
+              </motion.button>
+              <AnimatePresence>
+                {(aadhaarFile || reportFile || imageFile || billFile || result) && (
+                  <motion.button
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -8 }}
+                    onClick={handleReset}
+                    whileTap={{ scale: 0.93 }}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-[var(--muted)] hover:text-[var(--danger)] transition-colors"
+                    data-testid="button-clear-all"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    Clear All
+                  </motion.button>
+                )}
+              </AnimatePresence>
             </div>
             {!result && !isAnalyzing && (
-              <p className="text-[11px] text-[var(--muted)]" data-testid="banner-pending">
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-[11px] text-[var(--muted)]"
+                data-testid="banner-pending"
+              >
                 {uploadedCount < 4
                   ? `Upload all ${4 - uploadedCount} remaining document${4 - uploadedCount > 1 ? 's' : ''} to enable verification`
                   : 'All documents ready — click Run Fraud Verification to proceed'}
-              </p>
+              </motion.p>
             )}
           </div>
         </motion.div>
@@ -1372,22 +1457,32 @@ export default function Home() {
         <AnimatePresence>
           {isAnalyzing && (
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="card p-6 mb-6"
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ type: 'spring', stiffness: 240, damping: 24 }}
+              className="card p-6 mb-6 overflow-hidden"
             >
-              <div className="flex items-center gap-3 mb-4">
-                <Loader2 className="w-5 h-5 text-[var(--accent)] animate-spin" />
+              <div className="flex items-center gap-3 mb-3">
+                <Loader2 className="w-5 h-5 text-[var(--accent)] animate-spin flex-shrink-0" />
                 <span className="text-sm font-bold text-[var(--text)]">Running Multi-Document Fraud Analysis…</span>
               </div>
-              {['Extracting document data', 'Running authenticity checks', 'Cross-referencing patient identity', 'Correlating procedure and billing', 'Generating fraud risk score'].map((step, i) => (
-                <div key={i} className="flex items-center gap-2.5 py-1.5">
+              <div className="w-full bg-[var(--panel2)] rounded-full h-1.5 mb-4 overflow-hidden">
+                <div className="h-1.5 rounded-full analysis-bar-fill" style={{ background: 'var(--accent)' }} />
+              </div>
+              {['Extracting document data', 'Running authenticity checks', 'Cross-referencing patient identity', 'Correlating procedure and billing', 'Generating fraud risk score'].map((stepLabel, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, x: -14 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.38, type: 'spring', stiffness: 260, damping: 22 }}
+                  className="flex items-center gap-2.5 py-1.5"
+                >
                   <div className="w-5 h-5 rounded-full bg-[var(--panel2)] border border-[var(--border)] flex items-center justify-center flex-shrink-0">
-                    <Loader2 className="w-2.5 h-2.5 text-[var(--accent)] animate-spin" style={{ animationDelay: `${i * 0.3}s` }} />
+                    <Loader2 className="w-2.5 h-2.5 text-[var(--accent)] animate-spin" style={{ animationDelay: `${i * 0.28}s` }} />
                   </div>
-                  <span className="text-xs text-[var(--muted)]">{step}</span>
-                </div>
+                  <span className="text-xs text-[var(--muted)]">{stepLabel}</span>
+                </motion.div>
               ))}
             </motion.div>
           )}
@@ -1449,14 +1544,18 @@ export default function Home() {
                       </span>
                     </div>
                     <div className="flex items-baseline gap-1.5">
-                      <span className="text-4xl font-bold text-[var(--text)]" data-testid="text-risk-score">{result.riskScore}</span>
+                      <span className="text-4xl font-bold text-[var(--text)]" data-testid="text-risk-score">
+                        <AnimatedNumber value={result.riskScore} />
+                      </span>
                       <span className="text-sm text-[var(--muted)] font-medium">/ 100 Risk Score</span>
                     </div>
-                    <div className="w-full bg-[var(--panel2)] rounded-full h-2 mt-1">
-                      <div
-                        className="h-2 rounded-full transition-all"
+                    <div className="w-full bg-[var(--panel2)] rounded-full h-2 mt-1 overflow-hidden">
+                      <motion.div
+                        className="h-2 rounded-full"
+                        initial={{ width: '0%' }}
+                        animate={{ width: `${result.riskScore}%` }}
+                        transition={{ type: 'spring', stiffness: 52, damping: 16, delay: 0.35 }}
                         style={{
-                          width: `${result.riskScore}%`,
                           background: result.riskScore >= 60 ? 'var(--danger)' : result.riskScore >= 28 ? 'var(--grad-orange-start)' : 'var(--ok)',
                         }}
                         data-testid="risk-score-bar"
@@ -1478,21 +1577,53 @@ export default function Home() {
               </div>
 
               {result.fraudFlags.length > 0 && (
-                <div className="card p-5" data-testid="fraud-flags-section">
+                <motion.div
+                  className="card p-5"
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ type: 'spring', stiffness: 220, damping: 22, delay: 0.15 }}
+                  data-testid="fraud-flags-section"
+                >
                   <div className="flex items-center gap-2 mb-4">
                     <ShieldAlert className="w-4 h-4 text-[var(--danger)]" />
                     <h3 className="text-sm font-bold text-[var(--text)]">Fraud Flags Detected</h3>
-                    <span className="ml-auto text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[rgba(225,76,76,0.1)] text-[var(--danger)] border border-[rgba(225,76,76,0.2)]">
+                    <motion.span
+                      initial={{ scale: 0.7, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ type: 'spring', stiffness: 380, damping: 22, delay: 0.3 }}
+                      className="ml-auto text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[rgba(225,76,76,0.1)] text-[var(--danger)] border border-[rgba(225,76,76,0.2)]"
+                    >
                       {result.fraudFlags.length} flag{result.fraudFlags.length > 1 ? 's' : ''}
-                    </span>
+                    </motion.span>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    {result.fraudFlags.map((flag) => <FraudFlagChip key={flag.id} flag={flag} />)}
-                  </div>
-                </div>
+                  <motion.div
+                    className="flex flex-wrap gap-2"
+                    variants={{ visible: { transition: { staggerChildren: 0.07, delayChildren: 0.18 } } }}
+                    initial="hidden"
+                    animate="visible"
+                  >
+                    {result.fraudFlags.map((flag) => (
+                      <motion.div
+                        key={flag.id}
+                        variants={{
+                          hidden: { opacity: 0, scale: 0.76, y: 6 },
+                          visible: { opacity: 1, scale: 1, y: 0, transition: { type: 'spring', stiffness: 360, damping: 22 } },
+                        }}
+                      >
+                        <FraudFlagChip flag={flag} />
+                      </motion.div>
+                    ))}
+                  </motion.div>
+                </motion.div>
               )}
 
-              <div className="card p-5" data-testid="correlation-section">
+              <motion.div
+                className="card p-5"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ type: 'spring', stiffness: 220, damping: 22, delay: 0.22 }}
+                data-testid="correlation-section"
+              >
                 <div className="flex items-center gap-2 mb-4">
                   <GitMerge className="w-4 h-4 text-[var(--accent)]" />
                   <h3 className="text-sm font-bold text-[var(--text)]">Cross-Document Correlation</h3>
@@ -1501,9 +1632,18 @@ export default function Home() {
                   </span>
                 </div>
                 <div className="flex flex-col gap-2">
-                  {result.correlation.map((item) => <CorrelationRow key={item.field} item={item} />)}
+                  {result.correlation.map((item, ci) => (
+                    <motion.div
+                      key={item.field}
+                      initial={{ opacity: 0, x: -16 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.28 + ci * 0.09, type: 'spring', stiffness: 250, damping: 22 }}
+                    >
+                      <CorrelationRow item={item} />
+                    </motion.div>
+                  ))}
                 </div>
-              </div>
+              </motion.div>
 
               {result.fraudFlags.length === 0 && (
                 <div className="card p-5 flex items-center gap-3" data-testid="clean-result-banner" style={{ background: 'rgba(39,176,107,0.05)', borderColor: 'rgba(39,176,107,0.2)' }}>

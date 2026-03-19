@@ -4,11 +4,13 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.28s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.22s ease, border-color 0.18s ease;
 }
 
 .card:hover {
-  border-color: var(--accent);
+  transform: translateY(-2px) scale(1.002);
+  box-shadow: 0 18px 38px rgba(16,24,40,0.11);
+  border-color: rgba(59,130,246,0.3);
 }
 
 .card-muted {
@@ -260,4 +262,87 @@
 
 .animate-shimmer {
   animation: shimmer 1.8s ease-in-out infinite;
+}
+
+/* Step indicator pulse ring */
+@keyframes step-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(59,130,246,0.45); }
+  70%  { box-shadow: 0 0 0 7px rgba(59,130,246,0); }
+  100% { box-shadow: 0 0 0 0 rgba(59,130,246,0); }
+}
+.step-ring {
+  animation: step-ring 2s ease-out infinite;
+}
+
+/* CTA button glow pulse when ready */
+@keyframes btn-glow-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(59,130,246,0.18), 0 14px 28px rgba(16,24,40,0.12); }
+  50%       { box-shadow: 0 0 26px 6px rgba(59,130,246,0.13), 0 14px 28px rgba(16,24,40,0.12); }
+}
+.btn-glow-pulse {
+  animation: btn-glow-pulse 2.6s ease-in-out infinite;
+}
+
+/* Analysis progress bar fill */
+@keyframes analysis-fill {
+  0%   { width: 3%; }
+  40%  { width: 62%; }
+  75%  { width: 84%; }
+  100% { width: 97%; }
+}
+.analysis-bar-fill {
+  animation: analysis-fill 2.8s cubic-bezier(0.4,0,0.2,1) forwards;
+}
+
+/* Chip pop-in */
+@keyframes chip-pop {
+  0%   { opacity: 0; transform: scale(0.72) translateY(6px); }
+  65%  { transform: scale(1.06) translateY(-1px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* File drop zone — smoother hover */
+.file-drop-area {
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.22s cubic-bezier(0.34,1.56,0.64,1);
+}
+.file-drop-area:hover {
+  border-color: var(--accent);
+  background: rgba(59,130,246,0.04);
+  transform: scale(1.006);
+}
+
+/* KPI tile subtle lift on hover */
+.kpi-tile {
+  transition: transform 0.26s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.22s ease;
+}
+.kpi-tile:hover {
+  transform: translateY(-4px) scale(1.03);
+  box-shadow: 0 20px 40px rgba(16,24,40,0.16);
+}
+
+/* Gradient text utility */
+.gradient-text-danger {
+  background: linear-gradient(135deg, #e14c4c 0%, #ff6a88 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Subtle hero glow top */
+.hero-glow {
+  pointer-events: none;
+  position: absolute;
+  top: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  height: 280px;
+  background: radial-gradient(ellipse at center, rgba(59,130,246,0.09) 0%, transparent 70%);
+  z-index: 0;
+}
+
+/* Page dot grid */
+.page-dot-grid {
+  background-image: radial-gradient(circle, rgba(59,130,246,0.07) 1px, transparent 1px);
+  background-size: 28px 28px;
 }
