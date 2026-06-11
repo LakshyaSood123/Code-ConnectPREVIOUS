@@ -1,4 +1,8 @@
-import { type Submission, type InsertSubmission } from "@shared/schema";
+import {
+  type Submission,
+  type InsertSubmission,
+  type SubmissionLocalization,
+} from "@shared/schema";
 
 export interface IStorage {
   createSubmission(submission: InsertSubmission): Promise<Submission>;
@@ -15,7 +19,11 @@ export class MemStorage implements IStorage {
 
   async createSubmission(insertSubmission: InsertSubmission): Promise<Submission> {
     const id = this.currentId++;
-    const submission: Submission = { ...insertSubmission, id };
+    const submission: Submission = {
+      ...insertSubmission,
+      id,
+      localization: (insertSubmission.localization as SubmissionLocalization | null | undefined) ?? null,
+    };
     this.submissions.set(id, submission);
     return submission;
   }

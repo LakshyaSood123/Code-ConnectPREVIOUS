@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { insertAnalysisResultSchema, analysisResults } from './schema';
+import type { Submission } from "./schema";
 
 export const api = {
   // These endpoints are mock placeholders for the frontend-only demo
@@ -13,7 +13,7 @@ export const api = {
         toolType: z.enum(['document', 'fact-check', 'propaganda', 'metadata', 'geo']),
       }),
       responses: {
-        200: z.array(z.custom<typeof analysisResults.$inferSelect>()),
+        200: z.array(z.custom<Submission>()),
       },
     },
   },

@@ -2,12 +2,12 @@
   /* Brand / surfaces */
   --brand-blue: #2f3b52;
   --brand-blue-2: #232d40;
-  --bg: #f4f6f9;
-  --panel: #ffffff;
-  --panel2: #f1f4f8;
-  --text: #1f2937;
-  --muted: #6b7280;
-  --border: #e3e8ef;
+  --bg: #f4f3ef;
+  --panel: rgba(255, 255, 255, 0.88);
+  --panel2: #eff2f5;
+  --text: #243042;
+  --muted: #667287;
+  --border: rgba(99, 115, 139, 0.18);
 
   /* Accents */
   --accent: #3b82f6;
@@ -36,9 +36,9 @@
   --ok: #27b06b;
 
   /* Shadows / radius */
-  --shadow: 0 8px 20px rgba(16,24,40,0.08);
-  --shadow-strong: 0 14px 28px rgba(16,24,40,0.12);
-  --radius: 12px;
+  --shadow: 0 10px 28px rgba(30, 41, 59, 0.08);
+  --shadow-strong: 0 18px 40px rgba(30, 41, 59, 0.12);
+  --radius: 16px;
 }
 
 /* Dark theme overrides */

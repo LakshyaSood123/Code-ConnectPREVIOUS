@@ -2,6 +2,19 @@ import { pgTable, text, serial, integer, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+export type LocalizationBox = {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  label?: string;
+};
+
+export type SubmissionLocalization = {
+  hasOutputImage: boolean;
+  boundingBoxes?: LocalizationBox[];
+};
+
 export const submissions = pgTable("submissions", {
   id: serial("id").primaryKey(),
   pdfFileName: text("pdf_file_name").notNull(),
@@ -12,10 +25,7 @@ export const submissions = pgTable("submissions", {
   imageRiskScore: integer("image_risk_score").notNull(),
   overallDecision: text("overall_decision").notNull(),
   overallRiskLevel: text("overall_risk_level").notNull(),
-  localization: jsonb("localization").$type<{
-    hasOutputImage: boolean;
-    boundingBoxes?: { x: number; y: number; w: number; h: number; label?: string }[];
-  }>(),
+  localization: jsonb("localization").$type<SubmissionLocalization>(),
 });
 
 export const insertSubmissionSchema = createInsertSchema(submissions).omit({ id: true });

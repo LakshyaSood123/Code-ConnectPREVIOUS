@@ -146,6 +146,12 @@ function getSampleBoundingBoxes(): BoundingBox[] {
   ];
 }
 
+function getModelOutputBoundingBoxes(): BoundingBox[] {
+  return [
+    { x: 0.14, y: 0.66, w: 0.08, h: 0.07, label: 'Potential manipulation region' },
+  ];
+}
+
 function getSampleCircles(): ImperfectionCircle[] {
   return [
     { cx: 0.25, cy: 0.3, r: 0.06, label: 'Splicing artifact', severity: 'high' },
@@ -182,7 +188,7 @@ function getPatientName(lower: string): string {
   if (lower.includes('verma')) return 'Amit Verma';
   if (lower.includes('singh')) return 'Gurpreet Singh';
   if (lower.includes('rao')) return 'Suresh Rao';
-  return 'Rohit Mehta';
+  return 'Rohit Sharma';
 }
 
 function getHospital(lower: string): string {
@@ -212,6 +218,14 @@ function getMaskedAadhaar(lower: string): string {
   return `XXXX XXXX ${seed}${(seed + 3) % 10}${(seed + 7) % 10}${(seed + 1) % 10}`;
 }
 
+function formatDemoDate(date: Date): string {
+  return date.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
 function runMedicalMockAnalysis(
   aadhaarFile: File,
   reportFile: File,
@@ -235,8 +249,9 @@ function runMedicalMockAnalysis(
   const reportHospital = getHospital(rL);
   const billHospital = getHospital(bL);
 
+  const todayLabel = formatDemoDate(new Date());
   const reportDate = '12 Mar 2025';
-  const billDate = bL.includes('old') || bL.includes('jan') ? '08 Jan 2025' : '14 Mar 2025';
+  const billDate = bL.includes('old') || bL.includes('jan') ? '08 Jan 2025' : todayLabel;
 
   const flags: FraudFlag[] = [];
 
@@ -259,12 +274,14 @@ function runMedicalMockAnalysis(
     imageProcedure !== 'Medical Examination' &&
     reportProcedure !== 'Medical Examination' &&
     imageProcedure !== reportProcedure;
+  const imageDiscrepancyDetected = true;
   if (imageMismatch) flags.push({ id: 'image-mismatch', label: 'Diagnostic Image Mismatch', severity: 'medium', section: 'image' });
+  if (imageDiscrepancyDetected) flags.push({ id: 'image-discrepancy', label: 'Image Discrepancy Detected', severity: 'medium', section: 'image' });
 
   const providerMismatch = reportHospital !== billHospital;
   if (providerMismatch) flags.push({ id: 'provider-mismatch', label: 'Provider Mismatch', severity: 'medium', section: 'cross' });
 
-  const dateInconsistent = billDate !== '14 Mar 2025';
+  const dateInconsistent = billDate !== todayLabel;
   if (dateInconsistent) flags.push({ id: 'date-inconsistency', label: 'Date Inconsistency', severity: 'low', section: 'cross' });
 
   let risk = 8;
@@ -276,6 +293,7 @@ function runMedicalMockAnalysis(
   if (procMismatch) risk += 15;
   if (identityMismatch) risk += 10;
   if (imageMismatch) risk += 8;
+  if (imageDiscrepancyDetected) risk += 24;
   if (providerMismatch) risk += 6;
   if (dateInconsistent) risk += 4;
   risk = Math.min(risk, 98);
@@ -286,10 +304,9 @@ function runMedicalMockAnalysis(
   else if (risk >= 28) { verdict = 'Needs Manual Review'; overallDecision = 'MANUAL_REVIEW'; }
   else { verdict = 'Verified Safe'; overallDecision = 'APPROVE'; }
 
-  const hasBbox = iL.includes('bbox');
   const hasCircles = (iL.includes('bbox') || iL.includes('circles')) && iL.includes('_fake');
   const hasFake = iL.includes('_fake');
-  const hasOutimg = iL.includes('outimg');
+  const imageConsistencyIssue = imageMismatch || imageDiscrepancyDetected;
   const imgV = getVerdict(imageFile.name);
 
   const extracted: ExtractedData = {
@@ -310,7 +327,7 @@ function runMedicalMockAnalysis(
     image: {
       imageType: imageProcedure === 'Medical Examination' ? `${reportProcedure} Image` : `${imageProcedure} Image`,
       linkedProcedure: reportProcedure,
-      visualMatch: imageMismatch ? 'Mismatch' : 'Matched',
+      visualMatch: imageConsistencyIssue ? 'Mismatch' : 'Matched',
     },
     bill: {
       billedProcedure: billProcedure,
@@ -360,10 +377,12 @@ function runMedicalMockAnalysis(
     {
       field: 'Diagnostic Image Consistency',
       sourceA: `${reportProcedure} expected`,
-      sourceB: imageMismatch ? `${imageProcedure} detected` : `${reportProcedure} detected`,
+      sourceB: imageConsistencyIssue
+        ? `${reportProcedure} detected with discrepancy region flagged`
+        : `${reportProcedure} detected`,
       labelA: 'Report Type',
-      labelB: 'Image Detected',
-      status: imageMismatch ? 'mismatch' : 'matched',
+      labelB: 'Image Analysis',
+      status: imageConsistencyIssue ? 'mismatch' : 'matched',
     },
   ];
 
@@ -379,8 +398,8 @@ function runMedicalMockAnalysis(
       previewUrl: imagePreviewUrl,
       forgeryLocalization: hasFake ? getDemoForgeryPoints() : null,
       circles: hasCircles ? getSampleCircles() : undefined,
-      boundingBoxes: hasBbox ? getSampleBoundingBoxes() : undefined,
-      outputImageUrl: hasOutimg ? imagePreviewUrl : undefined,
+      boundingBoxes: getModelOutputBoundingBoxes(),
+      outputImageUrl: DEMO_MODEL_OUTPUT_URL,
       verdict: imgV.verdict,
       riskScore: imgV.riskScore,
     },
@@ -396,8 +415,8 @@ function AnimatedNumber({ value }: { value: number }) {
   return <>{display}</>;
 }
 
-const DEMO_SVG_URL =
-  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect width='400' height='300' fill='%23e8edf2'/%3E%3Crect x='30' y='20' width='340' height='60' rx='6' fill='%23c9d4e0'/%3E%3Crect x='30' y='100' width='160' height='80' rx='6' fill='%23c9d4e0'/%3E%3Crect x='210' y='100' width='160' height='80' rx='6' fill='%23c9d4e0'/%3E%3Crect x='30' y='200' width='340' height='60' rx='6' fill='%23c9d4e0'/%3E%3Ctext x='200' y='55' text-anchor='middle' fill='%238a9ab0' font-size='13' font-family='sans-serif'%3EDiagnostic Evidence Image%3C/text%3E%3C/svg%3E";
+const DEMO_IMAGE_URL = "/1.webp";
+const DEMO_MODEL_OUTPUT_URL = "/CHEST%20XRAY%202.jpeg";
 
 function makeDemoFile(name: string, type: string): File {
   return new File(['demo'], name, { type });
@@ -419,8 +438,9 @@ function ImageLightbox({
   onClose: () => void;
 }) {
   const [zoom, setZoom] = useState(1);
-  const [showOutput, setShowOutput] = useState(false);
+  const [showOutput, setShowOutput] = useState(Boolean(outputImageUrl));
   const [hoveredCircle, setHoveredCircle] = useState<number | null>(null);
+  const [hoveredBox, setHoveredBox] = useState<number | null>(null);
   const [showCallout, setShowCallout] = useState(false);
   const calloutTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const imgRef = useRef<HTMLImageElement>(null);
@@ -441,7 +461,7 @@ function ImageLightbox({
   };
 
   const currentSrc = showOutput && outputImageUrl ? outputImageUrl : imageUrl;
-  const showBoxes = !showOutput && boundingBoxes && boundingBoxes.length > 0;
+  const showBoxes = showOutput && boundingBoxes && boundingBoxes.length > 0;
   const showCircles = !showOutput && circles && circles.length > 0;
   const showPolygon = !showOutput && forgeryLocalization && forgeryLocalization.points.length > 0;
 
@@ -527,7 +547,7 @@ function ImageLightbox({
             )}
             {showBoxes && imgSize.w > 0 && (
               <svg
-                className="absolute top-0 left-0 pointer-events-none"
+                className="absolute top-0 left-0"
                 width={imgRef.current?.width || imgSize.w}
                 height={imgRef.current?.height || imgSize.h}
                 viewBox={`0 0 ${imgRef.current?.width || imgSize.w} ${imgRef.current?.height || imgSize.h}`}
@@ -540,11 +560,84 @@ function ImageLightbox({
                   const by = isRelative ? box.y * dispH : box.y;
                   const bw = isRelative ? box.w * dispW : box.w;
                   const bh = isRelative ? box.h * dispH : box.h;
+                  const calloutWidth = Math.min(248, Math.max(188, dispW * 0.42));
+                  const calloutHeight = 122;
+                  const calloutX = Math.min(
+                    Math.max(bx + bw * 0.5 - calloutWidth * 0.5, 12),
+                    Math.max(dispW - calloutWidth - 12, 12),
+                  );
+                  const preferredBelowY = by + bh + 16;
+                  const preferredAboveY = by - calloutHeight - 16;
+                  const calloutY =
+                    preferredBelowY + calloutHeight <= dispH - 12
+                      ? preferredBelowY
+                      : Math.max(preferredAboveY, 12);
+                  const lineEndX = Math.min(Math.max(bx + bw * 0.5, calloutX + 18), calloutX + calloutWidth - 18);
+                  const lineEndY = calloutY > by ? calloutY : calloutY + calloutHeight;
+                  const isHovered = hoveredBox === i;
                   return (
                     <g key={i}>
-                      <rect x={bx} y={by} width={bw} height={bh} fill="transparent" stroke="var(--accent)" strokeWidth="1.5" strokeDasharray="6 3" />
-                      {box.label && (
-                        <text x={bx + 4} y={by - 4} fill="var(--accent)" fontSize="10" fontWeight="600">{box.label}</text>
+                      <rect
+                        x={bx}
+                        y={by}
+                        width={bw}
+                        height={bh}
+                        fill="rgba(34, 197, 94, 0.08)"
+                        stroke="#22c55e"
+                        strokeWidth="2.5"
+                        rx="2"
+                        style={{ pointerEvents: 'all', cursor: 'pointer' }}
+                        onMouseEnter={() => setHoveredBox(i)}
+                        onMouseLeave={() => setHoveredBox(null)}
+                      />
+                      <line
+                        x1={bx + bw * 0.5}
+                        y1={by + bh * 0.5}
+                        x2={lineEndX}
+                        y2={lineEndY}
+                        stroke="#22c55e"
+                        strokeWidth="0.75"
+                        strokeDasharray="3 2"
+                        opacity={isHovered ? 0.9 : 0}
+                        style={{ transition: 'opacity 0.18s ease', pointerEvents: 'none' }}
+                      />
+                      {isHovered && (
+                        <foreignObject x={calloutX} y={calloutY} width={calloutWidth} height={calloutHeight}>
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'stretch',
+                              background: 'var(--panel)',
+                              border: '1px solid var(--border)',
+                              borderRadius: 'var(--radius)',
+                              boxShadow: 'var(--shadow)',
+                              overflow: 'hidden',
+                              width: `${calloutWidth}px`,
+                              height: `${calloutHeight}px`,
+                            }}
+                          >
+                            <div style={{ width: '3px', background: '#22c55e', flexShrink: 0 }} />
+                            <div style={{ padding: '10px 12px' }}>
+                              <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)', lineHeight: '1.3', letterSpacing: '0.01em' }}>
+                                AI discrepancy found
+                              </div>
+                              <div style={{ fontSize: '11px', color: 'var(--muted)', lineHeight: '1.45', marginTop: '4px' }}>
+                                Potential manipulation region
+                              </div>
+                              <div style={{ borderTop: '1px solid var(--border)', marginTop: '8px', paddingTop: '7px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                <div style={{ fontSize: '10px', color: 'var(--muted)', lineHeight: '1.45' }}>
+                                  <span style={{ color: 'var(--text)', fontWeight: 500 }}>Type:</span> Identity/text inconsistency
+                                </div>
+                                <div style={{ fontSize: '10px', color: 'var(--muted)', lineHeight: '1.45' }}>
+                                  <span style={{ color: 'var(--text)', fontWeight: 500 }}>Confidence:</span> 92%
+                                </div>
+                                <div style={{ fontSize: '10px', color: '#16a34a', fontWeight: 600, lineHeight: '1.45', marginTop: '2px' }}>
+                                  Review recommended
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </foreignObject>
                       )}
                     </g>
                   );
@@ -621,8 +714,20 @@ function ImageLightbox({
               const topRight = pts.reduce((best, p) => (p.x + (1 - p.y) > best.x + (1 - best.y) ? p : best), pts[0]);
               const anchorX = topRight.x * dW;
               const anchorY = topRight.y * dH;
-              const calloutX = anchorX + 28;
-              const calloutY = Math.max(anchorY - 40, 8);
+              const calloutWidth = Math.min(248, Math.max(188, dW * 0.42));
+              const calloutHeight = 122;
+              const calloutX = Math.min(
+                Math.max(anchorX - calloutWidth * 0.45, 12),
+                Math.max(dW - calloutWidth - 12, 12),
+              );
+              const preferredBelowY = anchorY + 18;
+              const preferredAboveY = anchorY - calloutHeight - 18;
+              const calloutY =
+                preferredBelowY + calloutHeight <= dH - 12
+                  ? preferredBelowY
+                  : Math.max(preferredAboveY, 12);
+              const lineEndX = Math.min(Math.max(anchorX, calloutX + 18), calloutX + calloutWidth - 18);
+              const lineEndY = calloutY > anchorY ? calloutY : calloutY + calloutHeight;
               return (
                 <>
                   <svg
@@ -669,8 +774,8 @@ function ImageLightbox({
                     <line
                       x1={anchorX}
                       y1={anchorY}
-                      x2={calloutX}
-                      y2={calloutY + 40}
+                      x2={lineEndX}
+                      y2={lineEndY}
                       stroke="var(--danger)"
                       strokeWidth="0.75"
                       strokeDasharray="3 2"
@@ -682,7 +787,7 @@ function ImageLightbox({
                     className="absolute"
                     style={{
                       left: calloutX,
-                      top: calloutY - 72,
+                      top: calloutY,
                       zIndex: 2,
                       opacity: showCallout ? 1 : 0,
                       transform: showCallout ? 'translateY(0) scale(1)' : 'translateY(4px) scale(0.98)',
@@ -701,24 +806,25 @@ function ImageLightbox({
                       borderRadius: 'var(--radius)',
                       boxShadow: 'var(--shadow)',
                       overflow: 'hidden',
-                      whiteSpace: 'nowrap',
+                      width: `${calloutWidth}px`,
+                      maxWidth: 'min(248px, calc(100vw - 40px))',
                     }}>
                       <div style={{ width: '3px', background: 'var(--danger)', flexShrink: 0 }} />
-                      <div style={{ padding: '8px 12px' }}>
+                      <div style={{ padding: '10px 12px' }}>
                         <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)', lineHeight: '1.3', letterSpacing: '0.01em' }}>
                           AI discrepancy found
                         </div>
-                        <div style={{ fontSize: '11px', color: 'var(--muted)', lineHeight: '1.4', marginTop: '3px' }}>
+                        <div style={{ fontSize: '11px', color: 'var(--muted)', lineHeight: '1.45', marginTop: '4px' }}>
                           Potential manipulation region
                         </div>
-                        <div style={{ borderTop: '1px solid var(--border)', marginTop: '6px', paddingTop: '5px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                          <div style={{ fontSize: '10px', color: 'var(--muted)', lineHeight: '1.4' }}>
+                        <div style={{ borderTop: '1px solid var(--border)', marginTop: '8px', paddingTop: '7px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <div style={{ fontSize: '10px', color: 'var(--muted)', lineHeight: '1.45' }}>
                             <span style={{ color: 'var(--text)', fontWeight: 500 }}>Type:</span> Identity/text inconsistency
                           </div>
-                          <div style={{ fontSize: '10px', color: 'var(--muted)', lineHeight: '1.4' }}>
+                          <div style={{ fontSize: '10px', color: 'var(--muted)', lineHeight: '1.45' }}>
                             <span style={{ color: 'var(--text)', fontWeight: 500 }}>Confidence:</span> 92%
                           </div>
-                          <div style={{ fontSize: '10px', color: 'var(--danger)', fontWeight: 600, lineHeight: '1.4', marginTop: '1px' }}>
+                          <div style={{ fontSize: '10px', color: 'var(--danger)', fontWeight: 600, lineHeight: '1.45', marginTop: '2px' }}>
                             Review recommended
                           </div>
                         </div>
@@ -756,7 +862,7 @@ function KpiTiles({ stats }: { stats: { uploaded: number; flags: number; mismatc
     { label: 'Documents Uploaded', value: stats.uploaded, icon: ScanLine, gradient: 'bg-gradient-teal' },
     { label: 'Fraud Flags', value: stats.flags, icon: ShieldAlert, gradient: 'bg-gradient-pink' },
     { label: 'Correlation Mismatches', value: stats.mismatches, icon: ClipboardCheck, gradient: 'bg-gradient-orange' },
-    { label: 'Manual Review', value: stats.manual, icon: ShieldCheck, gradient: 'bg-gradient-green' },
+    { label: 'Manual Review', value: stats.manual, icon: ShieldCheck, gradient: 'bg-gradient-green', featured: true },
   ];
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4" data-testid="kpi-tiles">
@@ -774,12 +880,23 @@ function KpiTiles({ stats }: { stats: { uploaded: number; flags: number; mismatc
             data-testid={`kpi-${tile.label.toLowerCase().replace(/\s+/g, '-')}`}
           >
             <div className="flex items-center justify-between mb-3">
-              <Icon className="w-5 h-5" style={{ color: 'var(--panel)' }} />
+              {tile.featured ? (
+                <>
+                  <div className="w-8 h-8 rounded-full border border-white/45 bg-white/10 flex items-center justify-center">
+                    <Icon className="w-4 h-4" style={{ color: 'var(--panel)' }} />
+                  </div>
+                  <div className="text-[10px] font-medium tracking-[0.22em] uppercase text-white/90">Live</div>
+                </>
+              ) : (
+                <Icon className="w-5 h-5" style={{ color: 'var(--panel)' }} />
+              )}
             </div>
             <div className="text-3xl font-bold tracking-tight">
               <AnimatedNumber value={tile.value} />
             </div>
-            <div className="text-xs font-semibold opacity-80 mt-1 uppercase tracking-wider">{tile.label}</div>
+            <div className={`text-xs font-semibold opacity-80 mt-1 uppercase ${tile.featured ? 'tracking-[0.22em]' : 'tracking-wider'}`}>
+              {tile.label}
+            </div>
           </motion.div>
         );
       })}
@@ -1067,7 +1184,9 @@ function getCorrelationSentence(item: CorrelationItem): string {
     case 'Diagnostic Image Consistency':
       return ok
         ? 'Diagnostic image type matches the reported procedure type.'
-        : `Diagnostic image suggests ${(item.sourceB ?? '').replace(' detected', '')} while report indicates ${(item.sourceA ?? '').replace(' expected', '')}.`;
+        : (item.sourceB ?? '').includes('discrepancy region flagged')
+          ? 'Diagnostic image matches the reported type, but the model output flagged a discrepancy region for review.'
+          : `Diagnostic image suggests ${(item.sourceB ?? '').replace(' detected', '')} while report indicates ${(item.sourceA ?? '').replace(' expected', '')}.`;
     default:
       return ok ? `${item.field} is consistent.` : `${item.field} shows inconsistency.`;
   }
@@ -1096,6 +1215,7 @@ function DocEvidenceCard({
   statusLabel,
   statusOk,
   statusText,
+  statusHeadline,
   statusSubtext,
 }: {
   delay: number;
@@ -1108,6 +1228,7 @@ function DocEvidenceCard({
   statusLabel: string;
   statusOk: boolean;
   statusText: string;
+  statusHeadline?: string;
   statusSubtext: string;
 }) {
   return (
@@ -1150,7 +1271,7 @@ function DocEvidenceCard({
           </span>
         </div>
         <div className="text-[13px] font-bold text-[var(--text)] leading-snug">
-          {statusOk ? 'Looks consistent' : 'Does not match'}
+          {statusHeadline ?? (statusOk ? 'Looks consistent' : 'Does not match')}
         </div>
         <div className="text-[10px] text-[var(--muted)] mt-0.5 leading-snug">{statusSubtext}</div>
       </div>
@@ -1211,7 +1332,7 @@ export default function Home() {
     setReportFile(demoReport);
     setImageFile(demoImage);
     setBillFile(demoBill);
-    setImagePreviewUrl(DEMO_SVG_URL);
+    setImagePreviewUrl(DEMO_IMAGE_URL);
     setResult(null);
   }, []);
 
@@ -1220,7 +1341,7 @@ export default function Home() {
     setReportFile(null);
     setImageFile(null);
     setBillFile(null);
-    if (imagePreviewUrl && imagePreviewUrl !== DEMO_SVG_URL) URL.revokeObjectURL(imagePreviewUrl);
+    if (imagePreviewUrl && imagePreviewUrl !== DEMO_IMAGE_URL) URL.revokeObjectURL(imagePreviewUrl);
     setImagePreviewUrl(null);
     setResult(null);
     setIsAnalyzing(false);
@@ -1244,7 +1365,9 @@ export default function Home() {
     uploaded: uploadedCount,
     flags: result?.fraudFlags.length ?? history.reduce((s, r) => s + r.fraudFlags.length, 0),
     mismatches: result?.correlation.filter(c => c.status === 'mismatch').length ?? 0,
-    manual: history.filter(r => r.overallDecision === 'MANUAL_REVIEW').length,
+    manual:
+      history.filter(r => r.overallDecision === 'MANUAL_REVIEW').length +
+      (result?.overallDecision === 'MANUAL_REVIEW' ? 1 : 0),
   };
 
   useEffect(() => {
@@ -1255,7 +1378,7 @@ export default function Home() {
   const step = isAnalyzing ? 2 : result ? 4 : canRun ? 1 : 0;
 
   return (
-    <div className="min-h-screen bg-[var(--bg)] page-dot-grid pb-20 font-sans selection:bg-[var(--accent)] selection:text-white">
+    <div className="min-h-screen bg-[var(--bg)] page-dot-grid paper-grain pb-20 font-sans selection:bg-[var(--accent)] selection:text-white">
       <NavBar />
 
       <main className="max-w-[960px] mx-auto px-6 pt-10">
@@ -1294,48 +1417,6 @@ export default function Home() {
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="mb-6">
           <KpiTiles stats={kpiStats} />
-        </motion.div>
-
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08, duration: 0.4 }} className="mb-6">
-          <div className="flex items-center gap-0">
-            {['Upload', 'Analyze', 'Correlate', 'Result'].map((label, i) => {
-              const active = step > i;
-              const current = (i === 0 && step === 0) || (i === 1 && step === 1) || (i === 2 && isAnalyzing) || (i === 3 && !!result);
-              return (
-                <div key={label} className="flex items-center flex-1">
-                  <div className="flex flex-col items-center gap-1 flex-1">
-                    <div
-                      className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold transition-all duration-300 ${current ? 'step-ring' : ''}`}
-                      style={{
-                        background: active || current ? 'var(--accent)' : 'var(--panel2)',
-                        color: active || current ? '#ffffff' : 'var(--muted)',
-                        border: `2px solid ${active || current ? 'var(--accent)' : 'var(--border)'}`,
-                      }}
-                    >
-                      <AnimatePresence mode="wait">
-                        {active && !current
-                          ? <motion.span key="check" initial={{ scale: 0, rotate: -30 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 400, damping: 20 }}><Check className="w-3.5 h-3.5" /></motion.span>
-                          : <motion.span key={`num-${i}`} initial={{ opacity: 0.6 }} animate={{ opacity: 1 }}>{i + 1}</motion.span>
-                        }
-                      </AnimatePresence>
-                    </div>
-                    <span
-                      className="text-[10px] font-semibold uppercase tracking-wide transition-colors duration-250"
-                      style={{ color: active || current ? 'var(--accent)' : 'var(--muted)' }}
-                    >
-                      {label}
-                    </span>
-                  </div>
-                  {i < 3 && (
-                    <div
-                      className="flex-1 h-px mx-1 mb-4 transition-all duration-400"
-                      style={{ background: active ? 'var(--accent)' : 'var(--border)' }}
-                    />
-                  )}
-                </div>
-              );
-            })}
-          </div>
         </motion.div>
 
         <div className="flex flex-col gap-4 mb-6">
@@ -1398,7 +1479,7 @@ export default function Home() {
               index: 3,
               icon: <Activity className="w-4 h-4 text-[var(--accent-2)]" />,
               title: 'Diagnostic Evidence Image',
-              helperText: 'Upload diagnostic scan image or evidence image associated with the report',
+              helperText: 'Upload diagnostic scan image or evidence image associated with the report, for example X-ray, MRI, CT, ultrasound, or lab scan image',
               accept: 'image/png,image/jpeg,image/jpg,.jpg,.jpeg,.png',
               acceptNote: 'Accepted: JPG, PNG',
               file: imageFile,
@@ -1487,7 +1568,7 @@ export default function Home() {
           ))}
         </div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }} className="card p-5 mb-6">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }} className="card action-panel p-5 mb-6">
           <div className="flex flex-col items-center gap-3">
             <motion.button
               onClick={canRun && !result ? runVerification : undefined}
@@ -1497,11 +1578,13 @@ export default function Home() {
               transition={{ type: 'spring', stiffness: 360, damping: 22 }}
               data-ready={String(canRun && !result)}
               data-testid="button-run-verification"
-              className={canRun && !result ? 'btn-glow-pulse' : ''}
+              className={canRun && !result ? 'btn-cta btn-cta-animated btn-glow-pulse' : 'btn-cta'}
               style={{
-                background: canRun && !result ? 'var(--accent)' : 'var(--panel2)',
-                color: canRun && !result ? 'var(--panel)' : 'var(--muted)',
-                border: canRun && !result ? '2px solid var(--accent)' : '2px solid var(--border)',
+                background: canRun && !result
+                  ? 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 52%, #0f766e 100%)'
+                  : 'var(--panel2)',
+                color: canRun && !result ? '#ffffff' : 'var(--muted)',
+                border: canRun && !result ? '2px solid rgba(29, 78, 216, 0.72)' : '2px solid var(--border)',
                 minHeight: '52px',
                 width: '100%',
                 maxWidth: '480px',
@@ -1515,26 +1598,15 @@ export default function Home() {
                 letterSpacing: '0.04em',
                 textTransform: 'uppercase' as const,
                 cursor: canRun && !result ? 'pointer' : 'not-allowed',
-                transition: 'background 0.2s ease, color 0.2s ease, border-color 0.2s ease',
+                boxShadow: canRun && !result ? '0 16px 30px rgba(37, 99, 235, 0.24)' : 'none',
+                transition: 'background 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease',
               }}
             >
               {isAnalyzing && <Loader2 className="w-4 h-4 animate-spin" />}
               {result && <CheckCircle2 className="w-4 h-4 text-[var(--ok)]" />}
-              {isAnalyzing ? 'Running Fraud Analysis…' : result ? 'Analysis Complete' : 'Run Fraud Verification'}
+              {isAnalyzing ? 'Reviewing documents…' : result ? 'Review complete' : 'Run claim review'}
             </motion.button>
             <div className="flex items-center gap-3">
-              <motion.button
-                onClick={runDemo}
-                disabled={isAnalyzing}
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.97 }}
-                transition={{ type: 'spring', stiffness: 360, damping: 22 }}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-[var(--border)] bg-[var(--panel2)] text-[var(--muted)] hover:text-[var(--text)] text-xs font-semibold transition-colors"
-                data-testid="button-run-demo"
-              >
-                <PlayCircle className="w-3.5 h-3.5" />
-                Run Demo with Sample Data
-              </motion.button>
               <AnimatePresence>
                 {(aadhaarFile || reportFile || imageFile || billFile || result) && (
                   <motion.button
@@ -1552,18 +1624,6 @@ export default function Home() {
                 )}
               </AnimatePresence>
             </div>
-            {!result && !isAnalyzing && (
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-[11px] text-[var(--muted)]"
-                data-testid="banner-pending"
-              >
-                {uploadedCount < 4
-                  ? `Upload all ${4 - uploadedCount} remaining document${4 - uploadedCount > 1 ? 's' : ''} to enable verification`
-                  : 'All documents ready — click Run Fraud Verification to proceed'}
-              </motion.p>
-            )}
           </div>
         </motion.div>
 
@@ -1578,7 +1638,7 @@ export default function Home() {
             >
               <div className="flex items-center gap-3 mb-3">
                 <Loader2 className="w-5 h-5 text-[var(--accent)] animate-spin flex-shrink-0" />
-                <span className="text-sm font-bold text-[var(--text)]">Running Multi-Document Fraud Analysis…</span>
+                <span className="text-sm font-bold text-[var(--text)]">Reviewing the claim bundle…</span>
               </div>
               <div className="w-full bg-[var(--panel2)] rounded-full h-1.5 mb-4 overflow-hidden">
                 <div className="h-1.5 rounded-full analysis-bar-fill" style={{ background: 'var(--accent)' }} />
@@ -1612,14 +1672,14 @@ export default function Home() {
               data-testid="card-result"
             >
               {/* ── Main result card ── */}
-              <div className="card p-7">
+              <div className="card p-7 rotate-[-0.2deg]">
                 {/* Header: title left + verdict chip right */}
                 <div className="flex items-start justify-between gap-6 mb-6">
                   <div>
-                    <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--muted)] mb-2">Final Result</div>
+                    <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--muted)] mb-2">Review Summary</div>
                     <h2 className="text-3xl font-bold text-[var(--text)] mb-2 leading-tight">Overall Verdict</h2>
                     <p className="text-sm text-[var(--muted)] max-w-md leading-relaxed">
-                      Rule-based frontend demo using deterministic filename heuristics and cross-document checks.
+                      A plain-language summary of what lined up cleanly and what looked off across the uploaded documents.
                     </p>
                     <div className="text-[10px] font-mono text-[var(--muted)] mt-3 opacity-50" data-testid="result-id">{result.id}</div>
                   </div>
@@ -1627,25 +1687,25 @@ export default function Home() {
                     initial={{ scale: 0.82, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ type: 'spring', stiffness: 300, damping: 24, delay: 0.14 }}
-                    className="rounded-2xl px-6 py-5 flex-shrink-0"
+                    className="rounded-2xl px-7 py-6 flex-shrink-0"
                     style={{
                       background: result.verdict === 'High Fraud Risk'
                         ? 'linear-gradient(140deg, #e14c4c 0%, #c73232 100%)'
                         : result.verdict === 'Needs Manual Review'
                           ? 'linear-gradient(140deg, #ff9a55 0%, #e07a1c 100%)'
                           : 'linear-gradient(140deg, #27b06b 0%, #1a9458 100%)',
-                      minWidth: '210px',
+                      minWidth: '260px',
                     }}
                     data-testid="overall-verdict-card"
                   >
                     <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/70 mb-1">Verdict</div>
-                    <div className="text-xl font-bold text-white leading-tight mb-2" data-testid="text-overall-verdict">{result.verdict}</div>
-                    <div className="text-sm text-white/80">
+                    <div className="text-[2rem] font-bold text-white leading-tight mb-3" data-testid="text-overall-verdict">{result.verdict}</div>
+                    <div className="text-base text-white/80">
                       Risk Score: <span className="font-bold" data-testid="text-risk-score"><AnimatedNumber value={result.riskScore} /></span>/100
                     </div>
-                    <div className="mt-2.5 w-full bg-white/20 rounded-full h-1.5 overflow-hidden">
+                    <div className="mt-4 w-full bg-white/20 rounded-full h-2 overflow-hidden">
                       <motion.div
-                        className="h-1.5 rounded-full bg-white/80"
+                        className="h-2 rounded-full bg-white/80"
                         initial={{ width: '0%' }}
                         animate={{ width: `${result.riskScore}%` }}
                         transition={{ type: 'spring', stiffness: 52, damping: 16, delay: 0.4 }}
@@ -1799,8 +1859,11 @@ export default function Home() {
                   ]}
                   statusLabel="Image Match Check"
                   statusOk={result.extracted.image.visualMatch === 'Matched'}
-                  statusText={result.extracted.image.visualMatch === 'Matched' ? 'Looks Consistent' : 'Does Not Match'}
-                  statusSubtext="Image compared with uploaded report"
+                  statusText={result.extracted.image.visualMatch === 'Matched' ? 'Looks Consistent' : 'Needs Review'}
+                  statusHeadline={result.extracted.image.visualMatch === 'Matched' ? 'Looks consistent' : 'Discrepancy detected'}
+                  statusSubtext={result.extracted.image.visualMatch === 'Matched'
+                    ? 'Image compared with uploaded report'
+                    : 'Model output flagged a discrepancy region in the uploaded image'}
                 />
                 <DocEvidenceCard
                   delay={0.29}
